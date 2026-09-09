@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Конструктор договора на СОУТ</title>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.min.js">
+  </script>
   <style>
     * {
       margin: 0;
@@ -60,20 +62,19 @@
     .btn-primary:hover {
       background: #002244;
     }
-    .btn-outline {
-      background: transparent;
-      color: #003366;
-      border: 2px solid #003366;
-    }
-    .btn-outline:hover {
-      background: #e6f0fa;
-    }
     .btn-success {
       background: #1e8b4c;
       color: #fff;
     }
     .btn-success:hover {
       background: #15703d;
+    }
+    .btn-word {
+      background: #2b5797;
+      color: #fff;
+    }
+    .btn-word:hover {
+      background: #1d3f6e;
     }
 
     .grid-2 {
@@ -130,11 +131,6 @@
       outline: none;
       box-shadow: 0 0 0 3px rgba(43, 123, 182, 0.12);
     }
-    .field input:disabled {
-      background: #f5f7fa;
-      color: #555;
-    }
-
     .field-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -217,7 +213,7 @@
       font-family: 'Arial Narrow', Arial, sans-serif;
       font-size: 11pt;
       line-height: 1.4;
-      color: #1e2e3f;
+      color: #000000;
       white-space: pre-wrap;
       padding: 0;
     }
@@ -226,28 +222,39 @@
       body {
         background: #fff;
         padding: 0.3in;
+        margin: 0;
       }
       .form-panel {
-        display: none;
+        display: none !important;
       }
       .preview-panel {
-        box-shadow: none;
-        border: none;
-        padding: 0;
-        max-height: none;
-        overflow: visible;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+        background: transparent !important;
       }
       .preview-panel .preview-header {
-        display: none;
+        display: none !important;
       }
       .btn-group {
-        display: none;
+        display: none !important;
       }
       .grid-2 {
-        display: block;
+        display: block !important;
+      }
+      .container {
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      .header {
+        display: none !important;
       }
       .contract-preview {
         font-size: 11pt !important;
+        white-space: pre-wrap !important;
+        color: #000000 !important;
       }
       .page-break {
         page-break-after: always;
@@ -281,12 +288,12 @@
       <div class="header-actions">
         <button class="btn btn-primary" id="updateBtn">🔄 Обновить</button>
         <button class="btn btn-success" id="printBtn">🖨️ Печать</button>
+        <button class="btn btn-word" id="wordBtn">📥 Сохранить в Word</button>
       </div>
     </div>
 
     <div class="grid-2">
 
-      <!-- ЛЕВАЯ ПАНЕЛЬ: ФОРМА -->
       <div class="form-panel">
         <h2>📝 Данные для договора</h2>
 
@@ -304,13 +311,10 @@
         <hr style="border: none; border-top: 2px solid #e6f0fa; margin: 14px 0;" />
 
         <div class="field" style="background: #f0f7fe; border-radius: 8px; padding: 10px 12px;">
-          <label style="color: #003366; font-weight: 700;">🔍 Загрузка по ИНН (DaData)</label>
+          <label style="color: #003366; font-weight: 700;">🔍 Загрузка по ИНН</label>
           <div class="field-row" style="gap: 8px;">
             <input type="text" id="innSearch" placeholder="Введите ИНН" style="flex:1;" />
             <button class="btn btn-primary" id="loadInnBtn" style="padding: 6px 16px; font-size: 13px;">Загрузить</button>
-          </div>
-          <div style="font-size: 11px; color: #6f8aa8; margin-top: 4px;">
-            ⚡ Данные подтягиваются из открытых источников (DaData)
           </div>
         </div>
 
@@ -338,6 +342,14 @@
         </div>
 
         <hr style="border: none; border-top: 2px solid #e6f0fa; margin: 14px 0;" />
+
+        <div class="field" style="background: #f0f7fe; border-radius: 8px; padding: 10px 12px;">
+          <label style="color: #003366; font-weight: 700;">🏦 Банковские реквизиты</label>
+          <div class="field-row" style="gap: 8px;">
+            <input type="text" id="bankSearch" placeholder="Введите БИК или название банка" style="flex:1;" />
+            <button class="btn btn-primary" id="loadBankBtn" style="padding: 6px 16px; font-size: 13px;">Найти банк</button>
+          </div>
+        </div>
 
         <div class="field">
           <label>Банк и номер счёта</label>
@@ -369,7 +381,6 @@
           <input type="number" id="ndsRate" value="5" min="0" max="20" step="0.5" />
         </div>
 
-        <!-- Суммы -->
         <div class="sum-block">
           <div class="line"><span>Стоимость без НДС:</span><strong id="totalWithoutNds">12 000 ₽</strong></div>
           <div class="line" style="color:#555;"><span>НДС (5%):</span><strong id="totalNds">600 ₽</strong></div>
@@ -380,10 +391,10 @@
         <div class="btn-group">
           <button class="btn btn-primary" id="updateBtn2">🔄 Обновить договор</button>
           <button class="btn btn-success" id="printBtn2">🖨️ Печать</button>
+          <button class="btn btn-word" id="wordBtn2">📥 Сохранить в Word</button>
         </div>
       </div>
 
-      <!-- ПРАВАЯ ПАНЕЛЬ: ПРЕВЬЮ -->
       <div class="preview-panel">
         <div class="preview-header">
           <span>📄 Превью договора</span>
@@ -496,46 +507,9 @@
     }
 
     // =============================================
-    // 3. ГЕНЕРАЦИЯ ДОГОВОРА С НУМЕРАЦИЕЙ СТРАНИЦ
+    // 3. ГЕНЕРАЦИЯ ДОГОВОРА
     // =============================================
-    function generateContractWithPagination() {
-      // Генерируем полный текст договора (как раньше)
-      const fullText = generateFullContract();
-      const lines = fullText.split('\n');
-
-      // Формируем страницы (по ~60 строк на страницу)
-      const linesPerPage = 62;
-      const pages = [];
-      let currentPage = [];
-      for (let i = 0; i < lines.length; i++) {
-        currentPage.push(lines[i]);
-        if (currentPage.length >= linesPerPage && i < lines.length - 1) {
-          pages.push(currentPage.join('\n'));
-          currentPage = [];
-        }
-      }
-      if (currentPage.length > 0) {
-        pages.push(currentPage.join('\n'));
-      }
-
-      // Добавляем нумерацию к каждой странице
-      const totalPages = pages.length;
-      let result = '';
-      for (let i = 0; i < pages.length; i++) {
-        const pageContent = pages[i];
-        const pageNum = i + 1;
-        // Добавляем номер страницы внизу (отступ 2 строки от текста)
-        const pageWithNumber = pageContent + '\n\n\n\nСтраница ' + pageNum + ' из ' + totalPages;
-        result += pageWithNumber;
-        if (i < pages.length - 1) {
-          result += '\n\n\n---\n\n\n'; // разделитель страниц для просмотра
-        }
-      }
-
-      return result;
-    }
-
-    function generateFullContract() {
+    function generateContract() {
       const number = document.getElementById('contractNumber').value || 'П-1027/СОУТ';
       const dateRaw = document.getElementById('contractDate').value;
       let date = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -563,7 +537,6 @@
       const ndsAmount = totalWithoutNds * (ndsRate / 100);
       const totalWithNds = totalWithoutNds + ndsAmount;
 
-      // Обновляем суммы
       document.getElementById('totalWithoutNds').textContent = totalWithoutNds.toLocaleString('ru-RU') + ' ₽';
       document.getElementById('totalNds').textContent = ndsAmount.toLocaleString('ru-RU') + ' ₽';
       document.getElementById('totalWithNds').textContent = totalWithNds.toLocaleString('ru-RU') + ' ₽';
@@ -572,9 +545,21 @@
       const priceWords = numToWords(price);
       const totalWords = rublesToWords(totalWithNds);
       const workplacesWords = numToWords(workplaces);
-      const workplacesWordsBig = numToWords(workplaces).toUpperCase();
 
-      // ШАБЛОН ДОГОВОРА (с центрированными и жирными заголовками)
+      const table = `
+      +------+---------------------------------------------+--------+-----------+------------------+------------------+
+      |  №   |  Наименование услуг по настоящему договору  | Кол-во |    Ед.    |  Цена, в т.ч. НДС | Сумма, в т.ч. НДС |
+      +------+---------------------------------------------+--------+-----------+------------------+------------------+
+      |  1   |  Специальная оценка условий труда            |  ${String(workplaces).padStart(4)}   | Раб. мест |  ${String(price.toLocaleString('ru-RU')).padStart(12)}   |  ${String(totalWithNds.toLocaleString('ru-RU')).padStart(12)}   |
+      +------+---------------------------------------------+--------+-----------+------------------+------------------+
+      `;
+
+      const signatures = `
+      Заказчик:                                  Исполнитель:
+      ${clientDirector}                          ${executor.director}
+      ____________________                       ____________________
+      `;
+
       return `
 Договор № ${number}
 
@@ -597,7 +582,7 @@ ${executor.name} (далее по тексту ${executor.name}), именуем
 
 2.1. Стоимость услуг по специальной оценке условий труда на одном рабочем месте составляет ${price.toLocaleString('ru-RU')} (${priceWords}) рублей 00 копеек, в т.ч. НДС ${ndsRate}% в соответствии с п.п.1 п.8 ст 164 НК РФ.
 
-2.2. Общая стоимость услуг ИСПОЛНИТЕЛЯ по настоящему Договору, подлежащая уплате ЗАКАЗЧИКОМ в объеме, указанном п. 1.1 настоящего Договора, составляет ${totalWithNds.toLocaleString('ru-RU')} (${totalWords}) рублей 00 копеек, в т.ч. НДС ${ndsRate}% в соответствии с п.п.1 п.8 ст 164 НК РФ.
+2.2. Общая стоимость услуг ИСПОЛНИТЕЛЯ по настоящему Договору, подлежащая уплате ЗАКАЗЧИКОМ в объеме, указанном п. 1.1 настоящего Договора, составляет *${totalWithNds.toLocaleString('ru-RU')} (${totalWords}) рублей 00 копеек*, в т.ч. НДС ${ndsRate}% в соответствии с п.п.1 п.8 ст 164 НК РФ.
 
 2.3. ЗАКАЗЧИК в течение 10 (Десяти) рабочих дней с даты подписания Договора и получения счета перечисляет ИСПОЛНИТЕЛЮ авансовый платеж, составляющий 100 % от общей стоимости Договора.
 
@@ -719,9 +704,7 @@ ${executor.bank}
 ОГРН ${executor.ogrn}
 ОКПО ${executor.okpo}
 
-ЗАКАЗЧИК                                 ИСПОЛНИТЕЛЬ
-${clientDirector}                        ${executor.director}
-____________________                     ____________________
+${signatures}
 
 ПРИЛОЖЕНИЕ № 1
 
@@ -737,15 +720,11 @@ ____________________                     ____________________
 
 СПЕЦИФИКАЦИЯ:
 
-№   Наименование услуг по настоящему договору   Кол-во   Ед.   Цена, в т.ч. НДС   Сумма, в т.ч. НДС
-1   Специальная оценка условий труда             ${workplaces}   Раб. мест   ${price.toLocaleString('ru-RU')}   ${totalWithNds.toLocaleString('ru-RU')}
+${table}
 
-Итого: ${totalWithNds.toLocaleString('ru-RU')} (${totalWords}) руб. 00 коп., в т.ч. НДС ${ndsRate}% в соответствии с п.п.1 п.8 ст 164 НК РФ.
+Итого: *${totalWithNds.toLocaleString('ru-RU')} (${totalWords}) руб. 00 коп.*, в т.ч. НДС ${ndsRate}% в соответствии с п.п.1 п.8 ст 164 НК РФ.
 
-Заказчик:                                Исполнитель:
-
-${clientDirector}                        ${executor.director}
-____________________                     ____________________
+${signatures}
 `;
     }
 
@@ -753,13 +732,40 @@ ____________________                     ____________________
     // 4. ОБНОВЛЕНИЕ ПРЕВЬЮ
     // =============================================
     function updatePreview() {
-      document.getElementById('contractPreview').textContent = generateContractWithPagination();
+      const fullText = generateContract();
+      const lines = fullText.split('\n');
+      const linesPerPage = 58;
+      const pages = [];
+      let currentPage = [];
+      for (let i = 0; i < lines.length; i++) {
+        currentPage.push(lines[i]);
+        if (currentPage.length >= linesPerPage && i < lines.length - 1) {
+          pages.push(currentPage.join('\n'));
+          currentPage = [];
+        }
+      }
+      if (currentPage.length > 0) {
+        pages.push(currentPage.join('\n'));
+      }
+
+      const totalPages = pages.length;
+      let result = '';
+      for (let i = 0; i < pages.length; i++) {
+        const pageContent = pages[i];
+        const pageNum = i + 1;
+        const pageWithNumber = pageContent + '\n\n\n\n' + String(pageNum);
+        result += pageWithNumber;
+        if (i < pages.length - 1) {
+          result += '\n\n\n---\n\n\n';
+        }
+      }
+      document.getElementById('contractPreview').textContent = result;
     }
 
     // =============================================
-    // 5. ЗАГРУЗКА ПО ИНН (DADATA)
+    // 5. ЗАГРУЗКА ПО ИНН (ЕДИНЫЙ КЛЮЧ)
     // =============================================
-    const DADATA_API_KEY = '43c75155bd3c2dc700e586381703df2369e2ad5e';
+    const DADATA_API_KEY = 'f94f4386b5ec6bc654487fc994c0fba0fdad788c';
 
     document.getElementById('loadInnBtn').addEventListener('click', function() {
       const inn = document.getElementById('innSearch').value.trim();
@@ -778,9 +784,23 @@ ____________________                     ____________________
           'Accept': 'application/json',
           'Authorization': 'Token ' + DADATA_API_KEY
         },
-        body: JSON.stringify({ query: inn })
+        body: JSON.stringify({ 
+          query: inn,
+          count: 1
+        })
       })
-      .then(response => response.json())
+      .then(response => {
+        if (response.status === 403) {
+          throw new Error('❌ Неверный API-ключ. Проверьте ключ в личном кабинете dadata.ru');
+        }
+        if (response.status === 429) {
+          throw new Error('❌ Превышен лимит запросов (10 000 в сутки)');
+        }
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+        }
+        return response.json();
+      })
       .then(data => {
         if (data.suggestions && data.suggestions.length > 0) {
           const org = data.suggestions[0].data;
@@ -790,22 +810,19 @@ ____________________                     ____________________
           document.getElementById('clientKpp').value = org.kpp || '';
           document.getElementById('clientOgrn').value = org.ogrn || '';
           document.getElementById('clientOkpo').value = org.okpo || '';
-          document.getElementById('clientDirector').value = (org.management?.post || '') + ' ' + (org.management?.name || '');
-          // Банковские реквизиты (если есть)
-          if (org.bank && org.bank.length > 0) {
-            const bank = org.bank[0];
-            document.getElementById('clientBank').value = 'р/с ' + (bank.account || '') + ' в ' + (bank.name || '');
-            document.getElementById('clientRs').value = bank.account || '';
-            document.getElementById('clientBik').value = bank.bik || '';
+          let director = '';
+          if (org.management) {
+            director = (org.management.post || '') + ' ' + (org.management.name || '');
           }
+          document.getElementById('clientDirector').value = director.trim() || 'Не указан';
           updatePreview();
+          alert('✅ Данные загружены!');
         } else {
-          alert('Организация по ИНН ' + inn + ' не найдена');
+          alert('❌ Организация по ИНН ' + inn + ' не найдена');
         }
       })
       .catch(error => {
-        console.error('Ошибка:', error);
-        alert('Ошибка при загрузке данных. Проверьте подключение к интернету.');
+        alert(error.message);
       })
       .finally(() => {
         this.disabled = false;
@@ -814,7 +831,97 @@ ____________________                     ____________________
     });
 
     // =============================================
-    // 6. ИНИЦИАЛИЗАЦИЯ
+    // 6. ПОИСК БАНКА (ЕДИНЫЙ КЛЮЧ)
+    // =============================================
+    document.getElementById('loadBankBtn').addEventListener('click', function() {
+      const query = document.getElementById('bankSearch').value.trim();
+      if (query.length < 3) {
+        alert('Введите БИК (9 цифр) или хотя бы 3 символа названия банка');
+        return;
+      }
+
+      this.disabled = true;
+      this.textContent = 'Поиск...';
+
+      fetch('https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/bank', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Token ' + DADATA_API_KEY
+        },
+        body: JSON.stringify({ 
+          query: query,
+          count: 1
+        })
+      })
+      .then(response => {
+        if (response.status === 403) {
+          throw new Error('❌ Неверный API-ключ. Проверьте ключ в личном кабинете dadata.ru');
+        }
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.suggestions && data.suggestions.length > 0) {
+          const bank = data.suggestions[0].data;
+          const bankName = bank.name?.p || bank.name?.c || 'Неизвестный банк';
+          document.getElementById('clientBank').value = 'р/с 407028' + (bank.bic || '') + ' в ' + bankName;
+          document.getElementById('clientBik').value = bank.bic || '';
+          document.getElementById('clientKs').value = '301018' + (bank.bic ? bank.bic.slice(0, 5) : '') + '0000000';
+          updatePreview();
+          alert('✅ Банк найден!');
+        } else {
+          alert('❌ Банк по запросу "' + query + '" не найден');
+        }
+      })
+      .catch(error => {
+        alert(error.message);
+      })
+      .finally(() => {
+        this.disabled = false;
+        this.textContent = 'Найти банк';
+      });
+    });
+
+    // =============================================
+    // 7. ЭКСПОРТ В WORD
+    // =============================================
+    function exportToWord() {
+      const text = generateContract();
+      const htmlContent = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office'
+              xmlns:w='urn:schemas-microsoft-com:office:word'
+              xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 11pt; line-height: 1.4; color: #000000; }
+            .center { text-align: center; font-weight: bold; }
+            .bold { font-weight: bold; }
+            .table { font-family: 'Courier New', monospace; font-size: 9pt; white-space: pre; }
+          </style>
+        </head>
+        <body>
+          <pre style="font-family: 'Arial Narrow', Arial, sans-serif; font-size: 11pt; line-height: 1.4; white-space: pre-wrap; color: #000000;">${text}</pre>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob([htmlContent], { type: 'application/msword' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'Договор_СОУТ.doc';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    }
+
+    // =============================================
+    // 8. ИНИЦИАЛИЗАЦИЯ
     // =============================================
     document.addEventListener('DOMContentLoaded', function() {
       const today = new Date().toISOString().split('T')[0];
@@ -835,6 +942,9 @@ ____________________                     ____________________
       document.getElementById('printBtn2').addEventListener('click', function() {
         window.print();
       });
+
+      document.getElementById('wordBtn').addEventListener('click', exportToWord);
+      document.getElementById('wordBtn2').addEventListener('click', exportToWord);
 
       updatePreview();
     });
