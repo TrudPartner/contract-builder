@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Конструктор договора на СОУТ</title>
 <style>
+  @page {
+    size: A4;
+    margin: 2cm 1.5cm 2.5cm 1.5cm;
+    @bottom-center {
+      content: "Стр. " counter(page) " из " counter(pages);
+      font-family: 'Arial', sans-serif;
+      font-size: 9pt;
+      color: #444;
+    }
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Segoe UI', Roboto, system-ui, sans-serif; background: #e9eff5; padding: 30px 20px; color: #111; }
   .container { max-width: 1300px; margin: 0 auto; }
@@ -26,8 +36,8 @@
   .form-panel h2 { font-size: 17px; color: #003366; border-bottom: 2px solid #e6f0fa; padding-bottom: 12px; margin-bottom: 18px; }
   .field { margin-bottom: 12px; }
   .field label { display: block; font-size: 12.5px; font-weight: 600; color: #1a3a5f; margin-bottom: 3px; }
-  .field input { width: 100%; padding: 7px 11px; border: 1px solid #d0dcec; border-radius: 8px; font-size: 14px; transition: 0.15s; background: #fff; }
-  .field input:focus { border-color: #2b7bb6; outline: none; box-shadow: 0 0 0 3px rgba(43, 123, 182, 0.12); }
+  .field input, .field select { width: 100%; padding: 7px 11px; border: 1px solid #d0dcec; border-radius: 8px; font-size: 14px; transition: 0.15s; background: #fff; font-family: inherit; }
+  .field input:focus, .field select:focus { border-color: #2b7bb6; outline: none; box-shadow: 0 0 0 3px rgba(43, 123, 182, 0.12); }
   .field input:read-only { background: #f5f7fa; color: #555; }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .sum-block { background: #f8faff; border-radius: 12px; padding: 14px 16px; margin-top: 14px; }
@@ -41,7 +51,7 @@
   .preview-panel .preview-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e6f0fa; padding-bottom: 12px; margin-bottom: 16px; font-size: 17px; font-weight: 700; color: #003366; }
   .preview-panel .preview-header .badge { font-size: 12px; font-weight: 600; padding: 2px 12px; border-radius: 40px; background: #e1f3e6; color: #1a6e3a; }
   .contract-preview { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 11pt; line-height: 1.4; color: #000; padding: 0; max-width: 100%; }
-  .contract-preview table.data { border-collapse: collapse; width: 100%; margin: 8px auto; font-size: 10pt; page-break-inside: avoid; break-inside: avoid; }
+  .contract-preview table.data { border-collapse: collapse; width: 100%; margin: 8px auto; font-size: 11pt; page-break-inside: avoid; break-inside: avoid; }
   .contract-preview table.data td, .contract-preview table.data th { border: 1px solid #000; padding: 4px 8px; text-align: center; page-break-inside: avoid; break-inside: avoid; }
   .contract-preview table.data tr { page-break-inside: avoid; break-inside: avoid; }
   .contract-preview table.data td:first-child, .contract-preview table.data th:first-child { width: 40px; }
@@ -49,6 +59,7 @@
   .contract-preview table.data td:last-child, .contract-preview table.data th:last-child { text-align: right; }
   .contract-preview ul { padding-left: 25px; margin: 4px 0; }
   .contract-preview .signatures { margin-top: 24px; page-break-inside: avoid; break-inside: avoid; }
+  .contract-preview .signatures td { text-align: left; vertical-align: top; }
   .contract-preview .center { text-align: center; }
   .contract-preview .bold { font-weight: bold; }
   .contract-preview .right { text-align: right; }
@@ -63,6 +74,7 @@
   .contract-preview .requisites-table td { border: none; padding: 1px 6px 1px 0; text-align: left; vertical-align: top; font-size: 11pt; }
   .contract-preview .requisites-table td:first-child { width: 50%; }
   .contract-preview .appendix-block { margin-top: 30px; page-break-inside: avoid; break-inside: avoid; }
+  .print-footer { display: none; }
 
   @media print {
     body { background: #fff; padding: 0; margin: 0; }
@@ -79,6 +91,20 @@
     .contract-preview table.data { page-break-inside: avoid !important; break-inside: avoid !important; }
     .contract-preview .signatures { page-break-inside: avoid !important; break-inside: avoid !important; }
     .contract-preview .appendix-block { page-break-inside: avoid !important; break-inside: avoid !important; }
+    .print-footer {
+      display: block !important;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 9pt;
+      font-family: Arial, sans-serif;
+      color: #333;
+      padding: 4px 15mm 0 15mm;
+      background: #fff;
+      border-top: 1px solid #ccc;
+    }
   }
   @media (max-width: 900px) {
     .grid-2 { grid-template-columns: 1fr; }
@@ -172,6 +198,17 @@
       </div>
       <div class="field"><label>Ставка НДС (%)</label><input type="number" id="ndsRate" value="5" min="0" max="20" step="0.5" /></div>
 
+      <div class="field" style="background: #fff8e6; border-radius: 8px; padding: 10px 12px; border: 1px solid #ffe0a3;">
+        <label style="color: #8a5a00; font-weight: 700;">💳 Способ оплаты</label>
+        <select id="paymentMethod">
+          <option value="100">100% предоплата</option>
+          <option value="50/50">50 / 50</option>
+          <option value="30/70">30 / 70</option>
+          <option value="70/30">70 / 30</option>
+          <option value="postpay">Постоплата (100% после подписания УПД)</option>
+        </select>
+      </div>
+
       <div class="sum-block">
         <div class="line"><span>Стоимость с НДС:</span><strong id="totalWithNds">12 000 ₽</strong></div>
         <div class="line"><span>НДС:</span><strong id="totalNds">571 ₽</strong></div>
@@ -193,6 +230,9 @@
         <span class="badge">Автообновление</span>
       </div>
       <div id="contractPreview" class="contract-preview"></div>
+      <div class="print-footer" id="printFooter">
+        Договор № <span id="footerContractNumber"></span>
+      </div>
     </div>
   </div>
 </div>
@@ -300,33 +340,18 @@ function numToWordsGenitive(num) {
   return result.trim() || 'ноля';
 }
 
-function rublesWord(num) {
-  const last = num % 10, preLast = Math.floor((num % 100) / 10);
-  if (preLast === 1) return 'рублей';
-  if (last === 1) return 'рубль';
-  if (last >= 2 && last <= 4) return 'рубля';
-  return 'рублей';
+function capitalizeFirst(str) {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function kopecksWord(num) {
-  const last = num % 10, preLast = Math.floor((num % 100) / 10);
-  if (preLast === 1) return 'копеек';
-  if (last === 1) return 'копейка';
-  if (last >= 2 && last <= 4) return 'копейки';
-  return 'копеек';
-}
-
-function formatMoney(amount) {
-  const rub = Math.floor(amount + 1e-9);
-  const kop = Math.round((amount - rub) * 100);
-  return rub.toLocaleString('ru-RU') + ',' + String(kop).padStart(2, '0');
-}
-
+// Формат суммы: "39 990 (Тридцать девять тысяч девятьсот девяносто) руб. 00 коп."
 function amountInWords(amount) {
   const rub = Math.floor(amount + 1e-9);
   const kop = Math.round((amount - rub) * 100);
-  const rubWords = numToWords(rub);
-  return `${formatMoney(amount)} (${rubWords} ${rublesWord(rub)} ${String(kop).padStart(2, '0')} ${kopecksWord(kop)})`;
+  const rubWords = capitalizeFirst(numToWords(rub));
+  const kopStr = String(kop).padStart(2, '0');
+  return `${rub.toLocaleString('ru-RU')} (${rubWords}) руб. ${kopStr} коп.`;
 }
 
 function workplacesDeclension(num) {
@@ -477,7 +502,31 @@ function getInitials(director) {
 function getGender(director) { return detectGender(director); }
 
 // =============================================
-// 4. ГЕНЕРАЦИЯ ДОГОВОРА
+// 4. ГЕНЕРАЦИЯ РАЗДЕЛА 2 (СТОИМОСТЬ И ОПЛАТА)
+// =============================================
+function generateSection2(totalWithKop, ndsRate, paymentMethod) {
+  const clause21 = `<p><b>2.1.</b> Общая стоимость услуг ИСПОЛНИТЕЛЯ по настоящему Договору, подлежащая уплате ЗАКАЗЧИКОМ в объеме, указанном п. 1.1 настоящего Договора составляет <b>${totalWithKop}</b>, в т.ч. НДС ${ndsRate}% в соответствии с п.п.1 п.8 ст 164 НК РФ.</p>`;
+
+  const clause23 = `<p><b>2.3.</b> Все расчеты по Договору производятся в безналичном порядке путем перечисления денежных средств на указанный Исполнителем расчетный счет. Обязательства Заказчика по оплате считаются исполненными на дату зачисления денежных средств на корреспондентский счет банка Исполнителя.</p>`;
+
+  let clause22 = '';
+
+  if (paymentMethod === '100') {
+    clause22 = `<p><b>2.2.</b> Заказчик в течение 10 (Десяти) рабочих дней с даты подписания Договора и получения счета перечисляет ИСПОЛНИТЕЛЮ авансовый платеж, составляющий 100 % от общей стоимости Договора.</p>`;
+  } else if (paymentMethod === 'postpay') {
+    clause22 = `<p><b>2.2.</b> Заказчик оплачивает услуги Исполнителя в течение 10 (Десяти) рабочих дней с даты подписания Сторонами Универсального передаточного документа (УПД), подтверждающего оказание услуг в полном объеме. Датой оплаты считается дата поступления денежных средств на расчетный счет исполнителя.</p>`;
+  } else {
+    const [advance, final] = paymentMethod.split('/');
+    const intro = `<p class="no-indent" style="text-indent:0;">Оплата по Договору осуществляется следующим способом:</p>`;
+    clause22 = `${intro}<p><b>2.2.</b> Авансовый платеж в размере ${advance}% от общей суммы договора производится в течение 5 (Пяти) рабочих дней после выставления счета.</p>
+    <p>Окончательный расчет в размере ${final}% от общей суммы договора производится в течение 5 (Пяти) рабочих дней, с момента подписания УПД.</p>`;
+  }
+
+  return clause21 + clause22 + clause23;
+}
+
+// =============================================
+// 5. ГЕНЕРАЦИЯ ДОГОВОРА
 // =============================================
 function generateContractHTML() {
   const number = document.getElementById('contractNumber').value || 'П-1055/СОУТ';
@@ -512,24 +561,22 @@ function generateContractHTML() {
   const clientOkpo = document.getElementById('clientOkpo').value || '00000000';
   const clientDirectorRaw = document.getElementById('clientDirector').value || 'Генеральный директор Иванов Иван Иванович';
 
-  const clientDirectorNominative = formatDirectorPosition(clientDirectorRaw);
   const clientDirectorGenitive = declineFIO(clientDirectorRaw);
   const clientInitials = getInitials(clientDirectorRaw);
   const clientActing = getGender(clientDirectorRaw) === 'female' ? 'действующей' : 'действующего';
 
-  const executorDirectorNominative = formatDirectorPosition(executor.director);
   const executorDirectorGenitive = declineFIO(executor.director);
   const executorInitials = getInitials(executor.director);
   const executorActing = getGender(executor.director) === 'female' ? 'действующей' : 'действующего';
 
   const clientBank = document.getElementById('clientBank').value || 'р/с 00000000000000000000 в АО «Банк»';
-  const clientRs = document.getElementById('clientRs').value || '40702810000000000000';
   const clientKs = document.getElementById('clientKs').value || '30101810100000000000';
   const clientBik = document.getElementById('clientBik').value || '044525000';
 
   const workplaces = parseInt(document.getElementById('workplaces').value) || 10;
   const priceWithNds = parseFloat(document.getElementById('pricePerPlace').value) || 1200;
   const ndsRate = parseFloat(document.getElementById('ndsRate').value) || 5;
+  const paymentMethod = document.getElementById('paymentMethod').value || '100';
 
   const ndsAmount = priceWithNds * (ndsRate / (100 + ndsRate));
   const totalWithNds = workplaces * priceWithNds;
@@ -545,11 +592,12 @@ function generateContractHTML() {
   const workplacesDecl = workplacesDeclension(workplaces);
 
   const totalWithKop = amountInWords(totalWithNds);
-  const priceWithKop = amountInWords(priceWithNds);
 
   const isIP = /^ИП|индивидуальный предприниматель/i.test(clientFullName) || /^ИП/i.test(clientOpf);
   const ogrnLabel = isIP ? 'ОГРНИП' : 'ОГРН';
   const orgDeclensionWord = isIP ? 'именуемый' : 'именуемое';
+
+  const section2HTML = generateSection2(totalWithKop, ndsRate, paymentMethod);
 
   const tableHTML = `
   <table class="data">
@@ -577,19 +625,21 @@ function generateContractHTML() {
 
   const signaturesHTML = `
   <div class="signatures">
-    <table class="sig-table">
+    <table class="sig-table" style="width:100%;border:none;border-collapse:collapse;margin-top:24px;">
       <tr>
-        <td style="width:50%; vertical-align:top;">
-          <div><b>ЗАКАЗЧИК:</b></div>
-          <div style="margin-top:6px;">${getPositionOnly(clientDirectorRaw)}</div>
-          <div>${clientShortWithOpf}</div>
-          <div style="margin-top:30px;">________________________ / ${clientInitials} /</div>
+        <td style="width:50%;vertical-align:top;border:none;padding:0 12px 0 0;text-align:left;">
+          <b>ЗАКАЗЧИК:</b><br>
+          ${getPositionOnly(clientDirectorRaw)}<br>
+          ${clientShortWithOpf}<br>
+          <br>
+          ________________________ / ${clientInitials} /
         </td>
-        <td class="sig-right" style="width:50%; vertical-align:top; padding-left:20px;">
-          <div><b>ИСПОЛНИТЕЛЬ:</b></div>
-          <div style="margin-top:6px;">${getPositionOnly(executor.director)}</div>
-          <div>${executor.shortName}</div>
-          <div style="margin-top:30px;">________________________ / ${executorInitials} /</div>
+        <td style="width:50%;vertical-align:top;border:none;padding:0 0 0 12px;text-align:left;">
+          <b>ИСПОЛНИТЕЛЬ:</b><br>
+          ${getPositionOnly(executor.director)}<br>
+          ${executor.shortName}<br>
+          <br>
+          ________________________ / ${executorInitials} /
         </td>
       </tr>
     </table>
@@ -604,7 +654,6 @@ function generateContractHTML() {
           <p class="no-indent">ИНН/КПП ${clientInn}/${clientKpp}</p>
           <p class="no-indent">Юридический/почтовый адрес: ${clientAddress}</p>
           <p class="no-indent">${clientBank}</p>
-          <p class="no-indent">р/с ${clientRs}</p>
           <p class="no-indent">к/с ${clientKs}</p>
           <p class="no-indent">БИК ${clientBik}</p>
           <p class="no-indent">${ogrnLabel} ${clientOgrn}</p>
@@ -616,7 +665,6 @@ function generateContractHTML() {
           <p class="no-indent">ИНН/КПП ${executor.inn}/${executor.kpp}</p>
           <p class="no-indent">Юридический и почтовый адрес: ${executor.address}</p>
           <p class="no-indent">${executor.bank}</p>
-          <p class="no-indent">р/с ${executor.rs}</p>
           <p class="no-indent">к/с ${executor.ks}</p>
           <p class="no-indent">БИК ${executor.bik}</p>
           <p class="no-indent">ОГРН ${executor.ogrn}</p>
@@ -634,10 +682,13 @@ function generateContractHTML() {
     <div style="font-size:13pt;font-weight:700;text-align:center;"><b>Договор № ${number}</b></div>
     <div style="font-size:13pt;font-weight:700;text-align:center;"><b>на оказание услуг по проведению специальной оценки условий труда</b></div>
     <br>
-    <div style="display:flex;justify-content:space-between;margin:0;">
-      <span>${city}</span>
-      <span style="font-weight:bold;">${dateQuoted}</span>
-    </div>
+    <table style="width:100%;border:none;border-collapse:collapse;margin:0;">
+      <tr>
+        <td style="border:none;text-align:left;padding:0;vertical-align:top;">${city}</td>
+        <td style="border:none;text-align:right;padding:0;vertical-align:top;font-weight:bold;">${dateQuoted}</td>
+      </tr>
+    </table>
+    <div style="height:18px;"></div>
     ${preamble}
 
     <div class="section-title">1. ПРЕДМЕТ ДОГОВОРА</div>
@@ -646,9 +697,7 @@ function generateContractHTML() {
     <p><b>1.3.</b> ИСПОЛНИТЕЛЬ гарантирует Заказчику свое соответствие требованиям, установленным ст. 19 Федерального закона от 28.12.2013 № 426-ФЗ «О специальной оценке условий труда».</p>
 
     <div class="section-title">2. СТОИМОСТЬ УСЛУГ И ПОРЯДОК РАСЧЕТОВ</div>
-    <p><b>2.1.</b> Стоимость услуг по специальной оценке условий труда на одном рабочем месте составляет ${priceWithKop}, в т.ч. НДС ${ndsRate}% в соответствии с п.п.1 п.8 ст 164 НК РФ.</p>
-    <p><b>2.2.</b> Общая стоимость услуг ИСПОЛНИТЕЛЯ по настоящему Договору, подлежащая уплате Заказчиком в объеме, указанном п. 1.1 настоящего Договора, составляет <b>${totalWithKop}</b>, в т.ч. НДС ${ndsRate}% в соответствии с п.п.1 п.8 ст 164 НК РФ.</p>
-    <p><b>2.3.</b> Заказчик в течение 10 (Десяти) рабочих дней с даты подписания Договора и получения счета перечисляет ИСПОЛНИТЕЛЮ авансовый платеж, составляющий 100 % от общей стоимости Договора.</p>
+    ${section2HTML}
 
     <div class="section-title">3. ОБЯЗАННОСТИ СТОРОН</div>
     <p><b>3.1.</b> Заказчик обязуется в течение 10 (Десяти) рабочих дней с момента подписания Договора предоставить ИСПОЛНИТЕЛЮ исходные данные и сведения, необходимые для оказания услуг по настоящему Договору:</p>
@@ -727,10 +776,10 @@ function generateContractHTML() {
       <div class="bold">от ${dateFull}</div>
     </div>
     <div style="text-align:center; margin-top:12px;">
-      <p class="no-indent">Перечень услуг, предоставляемых Исполнителем ${executor.fullName},</p>
-      <p class="no-indent">Заказчику: ${clientShortWithOpf}</p>
-      <p class="no-indent">По адресам:</p>
-      <p class="no-indent">1) ${clientAddress}</p>
+      <p class="no-indent" style="text-align:center;">Перечень услуг, предоставляемых Исполнителем ${executor.fullName},</p>
+      <p class="no-indent" style="text-align:center;">Заказчику: ${clientShortWithOpf}</p>
+      <p class="no-indent" style="text-align:center;">По адресам:</p>
+      <p class="no-indent" style="text-align:center;">1) ${clientAddress}</p>
     </div>
     <div class="section-title">СПЕЦИФИКАЦИЯ:</div>
     ${tableHTML}
@@ -742,14 +791,16 @@ function generateContractHTML() {
 }
 
 // =============================================
-// 5. ОБНОВЛЕНИЕ ПРЕВЬЮ
+// 6. ОБНОВЛЕНИЕ ПРЕВЬЮ
 // =============================================
 function updatePreview() {
   document.getElementById('contractPreview').innerHTML = generateContractHTML();
+  const footer = document.getElementById('footerContractNumber');
+  if (footer) footer.textContent = document.getElementById('contractNumber').value || '—';
 }
 
 // =============================================
-// 6. ЗАГРУЗКА ПО ИНН
+// 7. ЗАГРУЗКА ПО ИНН
 // =============================================
 const DADATA_API_KEY = 'f94f4386b5ec6bc654487fc994c0fba0fdad788c';
 
@@ -793,7 +844,7 @@ document.getElementById('loadInnBtn').addEventListener('click', function() {
 });
 
 // =============================================
-// 7. ПОИСК БАНКА
+// 8. ПОИСК БАНКА
 // =============================================
 document.getElementById('loadBankBtn').addEventListener('click', function() {
   const query = document.getElementById('bankSearch').value.trim();
@@ -821,7 +872,7 @@ document.getElementById('loadBankBtn').addEventListener('click', function() {
 });
 
 // =============================================
-// 8. ЭКСПОРТ В WORD
+// 9. ЭКСПОРТ В WORD
 // =============================================
 function exportToWord() {
   const clientOpfShort = document.getElementById('clientOpfShort').value || '';
@@ -838,7 +889,7 @@ function exportToWord() {
     @page { size: A4; margin: 2cm 1.5cm; }
     body { font-family: 'Arial Narrow', Arial, sans-serif; font-size: 11pt; line-height: 1.4; color: #000; }
     .center { text-align: center; } .bold { font-weight: bold; }
-    table.data { border-collapse: collapse; width: 100%; margin: 8px auto; font-size: 10pt; page-break-inside: avoid; }
+    table.data { border-collapse: collapse; width: 100%; margin: 8px auto; font-size: 11pt; page-break-inside: avoid; }
     table.data td, table.data th { border: 1px solid #000; padding: 4px 8px; text-align: center; page-break-inside: avoid; }
     table.data tr { page-break-inside: avoid; }
     table.data td:first-child, table.data th:first-child { width: 40px; }
@@ -853,6 +904,8 @@ function exportToWord() {
     p.no-indent { text-indent: 0; }
     .section-title { text-align: center; font-weight: bold; margin-top: 16px; margin-bottom: 8px; font-size: 12pt; page-break-after: avoid; }
     .appendix-block { margin-top: 30px; page-break-inside: avoid; }
+    .signatures td { vertical-align: top; padding-top: 0; padding-bottom: 0; text-align: left; }
+    .signatures table { border-collapse: collapse; }
   </style></head><body>${html}</body></html>`;
   const blob = new Blob(['\ufeff' + fullHtml], { type: 'application/msword' });
   const link = document.createElement('a');
@@ -865,12 +918,12 @@ function exportToWord() {
 }
 
 // =============================================
-// 9. ИНИЦИАЛИЗАЦИЯ
+// 10. ИНИЦИАЛИЗАЦИЯ
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('contractDate').value = today;
-  document.querySelectorAll('input').forEach(inp => {
+  document.querySelectorAll('input, select').forEach(inp => {
     inp.addEventListener('input', updatePreview);
     inp.addEventListener('change', updatePreview);
   });
