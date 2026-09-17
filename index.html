@@ -29,6 +29,8 @@
   .btn-success:hover { background: #15703d; }
   .btn-word { background: #2b5797; color: #fff; }
   .btn-word:hover { background: #1d3f6e; }
+  .btn-copy { background: #6c4bb6; color: #fff; }
+  .btn-copy:hover { background: #533a91; }
   .grid-2 { display: grid; grid-template-columns: 380px 1fr; gap: 28px; }
   .form-panel { background: #fff; border-radius: 24px; padding: 24px 26px; box-shadow: 0 8px 30px rgba(0, 30, 60, 0.08); max-height: calc(100vh - 150px); overflow-y: auto; }
   .form-panel::-webkit-scrollbar { width: 4px; }
@@ -124,6 +126,7 @@
       <button class="btn btn-primary" id="updateBtn">🔄 Обновить</button>
       <button class="btn btn-success" id="printBtn">🖨️ Печать</button>
       <button class="btn btn-word" id="wordBtn">📥 Сохранить в Word</button>
+      <button class="btn btn-copy" id="copyRegistryBtnTop">📋 Скопировать для реестра</button>
     </div>
   </div>
 
@@ -228,6 +231,7 @@
         <button class="btn btn-primary" id="updateBtn2">🔄 Обновить</button>
         <button class="btn btn-success" id="printBtn2">🖨️ Печать</button>
         <button class="btn btn-word" id="wordBtn2">📥 Word</button>
+        <button class="btn btn-copy" id="copyRegistryBtn">📋 Скопировать для реестра</button>
       </div>
     </div>
 
@@ -536,6 +540,7 @@ function getGender(director) { return detectGender(director); }
 const templates = {
   sout: {
     label: 'СОУТ',
+    workType: 'СОУТ',
     subjectNominative: 'специальная оценка условий труда',
     subjectGenitive: 'специальной оценки условий труда',
     subjectHeader: 'на оказание услуг по проведению специальной оценки условий труда',
@@ -552,6 +557,7 @@ const templates = {
   },
   risks: {
     label: 'Оценка рисков',
+    workType: 'ОЦЕНКА РИСКОВ',
     subjectNominative: 'оценка профессиональных рисков',
     subjectGenitive: 'оценки профессиональных рисков',
     subjectHeader: 'на оказание услуг по оценке профессиональных рисков',
@@ -875,7 +881,73 @@ function updatePreview() {
 }
 
 // =============================================
-// 8. ЗАГРУЗКА ПО ИНН
+// 8. КОПИРОВАНИЕ ДАННЫХ ДЛЯ РЕЕСТРА
+// =============================================
+function copyForRegistry() {
+  const tplKey = document.getElementById('templateType').value || 'sout';
+  const tpl = templates[tplKey];
+
+  const clientOpfShort = document.getElementById('clientOpfShort').value || '';
+  const clientName = document.getElementById('clientName').value || 'КИБО';
+  const cleanName = clientName.replace(/^[«"]|[»"]$/g, '').trim();
+  const nameFull = clientOpfShort
+    ? `${clientOpfShort} «${cleanName}»`
+    : `«${cleanName}»`;
+
+  const workType = tpl.workType;
+  const inn = document.getElementById('clientInn').value || '';
+  const kpp = document.getElementById('clientKpp').value || '';
+  const number = document.getElementById('contractNumber').value || '';
+
+  const dateRaw = document.getElementById('contractDate').value;
+  let dateStr = '';
+  if (dateRaw) {
+    const [y, m, d] = dateRaw.split('-');
+    dateStr = `${d}.${m}.${y}`;
+  }
+
+  const workplaces = document.getElementById('workplaces').value || '';
+
+  // Строка в формате TSV (разделитель — табуляция)
+  const row = [
+    '',           // № п/п — пусто, заполняется вручную в Excel
+    nameFull,     // Название
+    workType,     // Вид работ
+    inn,          // ИНН
+    kpp,          // КПП
+    number,       // № договора
+    dateStr,      // Дата (столбец «#ССЫЛКА!»)
+    workplaces    // Кол-во РМ
+  ].join('\t');
+
+  // Копируем в буфер
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(row).then(() => {
+      alert('✅ Строка скопирована в буфер обмена.\n\nВставьте её в Excel через Ctrl+V — данные разложатся по столбцам.');
+    }).catch(() => fallbackCopy(row));
+  } else {
+    fallbackCopy(row);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    alert('✅ Строка скопирована в буфер обмена.\n\nВставьте её в Excel через Ctrl+V.');
+  } catch (err) {
+    alert('❌ Не удалось скопировать автоматически.\n\nСкопируйте вручную:\n\n' + text);
+  }
+  document.body.removeChild(ta);
+}
+
+// =============================================
+// 9. ЗАГРУЗКА ПО ИНН
 // =============================================
 const DADATA_API_KEY = 'f94f4386b5ec6bc654487fc994c0fba0fdad788c';
 
@@ -919,7 +991,7 @@ document.getElementById('loadInnBtn').addEventListener('click', function() {
 });
 
 // =============================================
-// 9. ПОИСК БАНКА
+// 10. ПОИСК БАНКА
 // =============================================
 document.getElementById('loadBankBtn').addEventListener('click', function() {
   const query = document.getElementById('bankSearch').value.trim();
@@ -947,7 +1019,7 @@ document.getElementById('loadBankBtn').addEventListener('click', function() {
 });
 
 // =============================================
-// 10. ЭКСПОРТ В WORD
+// 11. ЭКСПОРТ В WORD
 // =============================================
 function exportToWord() {
   const clientOpfShort = document.getElementById('clientOpfShort').value || '';
@@ -995,7 +1067,7 @@ function exportToWord() {
 }
 
 // =============================================
-// 11. ИНИЦИАЛИЗАЦИЯ
+// 12. ИНИЦИАЛИЗАЦИЯ
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
   const today = new Date().toISOString().split('T')[0];
@@ -1010,6 +1082,8 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('printBtn2').addEventListener('click', () => window.print());
   document.getElementById('wordBtn').addEventListener('click', exportToWord);
   document.getElementById('wordBtn2').addEventListener('click', () => exportToWord());
+  document.getElementById('copyRegistryBtn').addEventListener('click', copyForRegistry);
+  document.getElementById('copyRegistryBtnTop').addEventListener('click', copyForRegistry);
   updatePreview();
 });
 </script>
