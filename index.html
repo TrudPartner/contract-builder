@@ -95,6 +95,15 @@
   .pk-total { text-align: right; font-size: 13px; color: #003366; margin-top: 6px; padding-top: 6px; border-top: 1px solid #c8e0f5; }
   .pk-total b { font-size: 14px; }
 
+  /* Блок лабораторного контроля */
+  .lab-row { display: grid; grid-template-columns: 1fr 55px 55px 65px 30px; gap: 5px; margin-bottom: 5px; align-items: center; }
+  .lab-row input { padding: 5px 7px; font-size: 12.5px; border: 1px solid #d0dcec; border-radius: 6px; font-family: inherit; width: 100%; }
+  .lab-row input:focus { border-color: #2b7bb6; outline: none; }
+  .lab-row .lab-del { background: #c0392b; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700; padding: 5px 0; width: 30px; }
+  .lab-row .lab-del:hover { background: #992d22; }
+  .lab-head { display: grid; grid-template-columns: 1fr 55px 55px 65px 30px; gap: 5px; font-size: 11px; color: #4a6f8f; font-weight: 600; padding: 0 0 4px 0; }
+  .lab-extra-row { display: grid; grid-template-columns: 1fr 55px 65px 30px; gap: 5px; margin-bottom: 5px; align-items: center; }
+
   @media print {
     body { background: #fff; padding: 0; margin: 0; }
     .form-panel { display: none !important; }
@@ -132,6 +141,7 @@
     .header h1 { font-size: 20px; flex-wrap: wrap; }
     .contract-preview .sig-table td { display: block; width: 100%; padding: 0 !important; margin-bottom: 20px; }
     .pk-row { grid-template-columns: 1fr 55px 65px 28px; }
+    .lab-row, .lab-head { grid-template-columns: 1fr 45px 45px 55px 28px; }
   }
 </style>
 </head>
@@ -157,8 +167,8 @@
       <div class="field" style="background: #e8f3ff; border-radius: 8px; padding: 10px 12px; border: 1px solid #b8d9f5;">
         <label style="color: #003366; font-weight: 700;">🏢 Исполнитель</label>
         <select id="executorType">
-          <option value="ecolab">ООО «ЭкоЛаб-Эксперт» (с НДС)</option>
-          <option value="trudpartner">ООО «Труд Партнер» (без НДС)</option>
+          <option value="ecolab">ООО «ЭкоЛаб-Эксперт»</option>
+          <option value="trudpartner">ООО «Труд Партнер»</option>
         </select>
       </div>
 
@@ -170,7 +180,10 @@
       <div class="field-row" style="margin-top: 10px;">
         <div class="field">
           <label>Номер договора</label>
-          <input type="text" id="contractNumber" value="П-1055/СОУТ" />
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="contractNumber" style="flex:1;" />
+            <button type="button" class="btn btn-primary" id="genNumberBtn" style="padding: 6px 14px; font-size: 13px; white-space: nowrap;" title="Сгенерировать новый номер">🎲</button>
+          </div>
         </div>
         <div class="field">
           <label>Дата договора</label>
@@ -235,7 +248,7 @@
       <div id="blockSimple">
         <div class="field-row">
           <div class="field"><label id="labelWorkplaces">Кол-во рабочих мест</label><input type="number" id="workplaces" value="10" min="1" /></div>
-          <div class="field"><label>Цена за 1 место (вкл. НДС)</label><input type="number" id="pricePerPlace" value="1200" min="0" step="0.01" /></div>
+          <div class="field"><label>Цена за 1 место</label><input type="number" id="pricePerPlace" value="1200" min="0" step="0.01" /></div>
         </div>
       </div>
 
@@ -243,7 +256,7 @@
       <div id="blockPk" style="display:none;">
         <div class="field">
           <label>Адрес объекта проведения работ</label>
-          <input type="text" id="pkAddress" placeholder="Например: Санкт-Петербург г, Колпино г, Северная ул, дом № 14, литера К, помещение 1Н, комната 130" />
+          <input type="text" id="pkAddress" placeholder="Например: Санкт-Петербург г, Колпино г, Северная ул, дом № 14" />
         </div>
         <div class="field-row">
           <div class="field"><label>Дата начала работ</label><input type="date" id="pkDateFrom" /></div>
@@ -280,6 +293,43 @@
         </div>
       </div>
 
+      <!-- Блок для ЛАБОРАТОРНОГО КОНТРОЛЯ -->
+      <div id="blockLab" style="display:none;">
+        <div class="field">
+          <label>Адрес объекта проведения работ</label>
+          <input type="text" id="labAddress" placeholder="Например: 191167, Санкт-Петербург г, Синопская наб, дом № 32/35" />
+        </div>
+
+        <div class="pk-block" style="background:#eaf6ff; border-color:#b8d9f5;">
+          <div class="pk-header">
+            <b>🧪 Спецификация (факторы)</b>
+            <button class="btn btn-add btn-mini" id="addLabRowBtn" type="button">➕ Добавить</button>
+          </div>
+          <div class="lab-head">
+            <span>Наименование фактора</span>
+            <span>Ед.</span>
+            <span>Кол-во</span>
+            <span>Цена</span>
+            <span></span>
+          </div>
+          <div id="labRowsContainer"></div>
+          <div class="pk-total">
+            Итого замеров: <b id="labTotalQty">0</b> &nbsp;|&nbsp; Итого: <b id="labTotalSum">0 ₽</b>
+          </div>
+        </div>
+
+        <div class="pk-block" style="background:#f3f8ec; border-color:#c8e6a0; margin-top:10px;">
+          <div class="pk-header">
+            <b>➕ Дополнительные услуги</b>
+            <button class="btn btn-add btn-mini" id="addLabExtraBtn" type="button">➕ Добавить</button>
+          </div>
+          <div id="labExtraContainer"></div>
+          <div class="pk-total">
+            Итого доп. услуг: <b id="labExtraSum">0 ₽</b>
+          </div>
+        </div>
+      </div>
+
       <hr style="border: none; border-top: 2px solid #e6f0fa; margin: 14px 0;" />
 
       <div class="field" id="ndsRateField"><label>Ставка НДС (%)</label><input type="number" id="ndsRate" value="5" min="0" max="20" step="0.5" /></div>
@@ -290,9 +340,18 @@
           <option value="100">100% предоплата</option>
           <option value="50/50">50 / 50</option>
           <option value="30/70">30 / 70</option>
-          <option value="70/30">70 / 30</option>
-          <option value="postpay">Постоплата (100% после подписания УПД)</option>
+          <option value="custom">Другой (ручной ввод)</option>
         </select>
+        <div id="customPaymentFields" style="display:none; margin-top:10px; gap:10px;" class="field-row">
+          <div class="field" style="margin-bottom:0;">
+            <label>Аванс, %</label>
+            <input type="number" id="customAdvance" value="40" min="0" max="100" step="1" />
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Окончательный расчёт, %</label>
+            <input type="number" id="customFinal" value="60" min="0" max="100" step="1" />
+          </div>
+        </div>
       </div>
 
       <div class="sum-block">
@@ -375,37 +434,39 @@ function currentExecutor() { return executors[currentExecutorId]; }
 // 2. СПРАВОЧНИК ПАРАМЕТРОВ ПК
 // =============================================
 const PK_PARAMS = [
-  'Микроклимат',
-  'Освещенность',
-  'ЭМИ от ПЭВМ',
-  'Шум',
-  'Вибрация локальная',
-  'Вибрация общая',
+  'Микроклимат', 'Освещенность', 'ЭМИ от ПЭВМ', 'Шум',
+  'Вибрация локальная', 'Вибрация общая',
   'Химические вещества в воздухе рабочей зоны (АПФД)',
   'Химические вещества в воздухе рабочей зоны',
   'Аэрозоли преимущественно фиброгенного действия (АПФД)',
-  'Тяжесть трудового процесса',
-  'Напряженность трудового процесса',
-  'Ионизирующее излучение',
-  'Ультрафиолетовое излучение',
-  'Лазерное излучение',
-  'Электромагнитные поля',
-  'Инфразвук',
-  'Ультразвук',
-  'Биологический фактор',
+  'Тяжесть трудового процесса', 'Напряженность трудового процесса',
+  'Ионизирующее излучение', 'Ультрафиолетовое излучение', 'Лазерное излучение',
+  'Электромагнитные поля', 'Инфразвук', 'Ультразвук', 'Биологический фактор',
   'Другое (впишите вручную)'
 ];
 
 // =============================================
-// 3. ЧИСЛО ПРОПИСЬЮ
+// 3. ГЕНЕРАТОР НОМЕРА ДОГОВОРА
+// =============================================
+function generateContractNumber() {
+  const num = Math.floor(1000 + Math.random() * 9000);
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yy = String(now.getFullYear()).slice(-2);
+  return `${num}-${dd}.${mm}.${yy}`;
+}
+
+// =============================================
+// 4. ЧИСЛО ПРОПИСЬЮ
 // =============================================
 function numToWords(num, female) {
   if (num === 0) return 'ноль';
   const units = ['', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять'];
   const unitsF = ['', 'одна', 'две', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять'];
-  const teens = ['десять', 'одиннадцать', 'двенадцать', 'тринадцать', 'четырнадцать', 'пятнадцать', 'шестнадцать', 'семнадцать', 'восемнадцать', 'девятнадцать'];
-  const tens = ['', '', 'двадцать', 'тридцать', 'сорок', 'пятьдесят', 'шестьдесят', 'семьдесят', 'восемьдесят', 'девяносто'];
-  const hundreds = ['', 'сто', 'двести', 'триста', 'четыреста', 'пятьсот', 'шестьсот', 'семьсот', 'восемьсот', 'девятьсот'];
+  const teens = ['десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать'];
+  const tens = ['', '', 'двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят','восемьдесят','девяносто'];
+  const hundreds = ['', 'сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот'];
   function chunk(n, female) {
     let s = '';
     const h = Math.floor(n / 100), t = Math.floor((n % 100) / 10), u = n % 10;
@@ -442,11 +503,11 @@ function numToWords(num, female) {
 
 function numToWordsGenitive(num) {
   if (num === 0) return 'ноля';
-  const unitsGen = ['', 'одного', 'двух', 'трёх', 'четырёх', 'пяти', 'шести', 'семи', 'восьми', 'девяти'];
-  const unitsFGen = ['', 'одной', 'двух', 'трёх', 'четырёх', 'пяти', 'шести', 'семи', 'восьми', 'девяти'];
-  const teensGen = ['десяти', 'одиннадцати', 'двенадцати', 'тринадцати', 'четырнадцати', 'пятнадцати', 'шестнадцати', 'семнадцати', 'восемнадцати', 'девятнадцати'];
-  const tensGen = ['', '', 'двадцати', 'тридцати', 'сорока', 'пятидесяти', 'шестидесяти', 'семидесяти', 'восьмидесяти', 'девяноста'];
-  const hundredsGen = ['', 'ста', 'двухсот', 'трёхсот', 'четырёхсот', 'пятисот', 'шестисот', 'семисот', 'восьмисот', 'девятисот'];
+  const unitsGen = ['', 'одного','двух','трёх','четырёх','пяти','шести','семи','восьми','девяти'];
+  const unitsFGen = ['', 'одной','двух','трёх','четырёх','пяти','шести','семи','восьми','девяти'];
+  const teensGen = ['десяти','одиннадцати','двенадцати','тринадцати','четырнадцати','пятнадцати','шестнадцати','семнадцати','восемнадцати','девятнадцати'];
+  const tensGen = ['', '', 'двадцати','тридцати','сорока','пятидесяти','шестидесяти','семидесяти','восьмидесяти','девяноста'];
+  const hundredsGen = ['', 'ста','двухсот','трёхсот','четырёхсот','пятисот','шестисот','семисот','восьмисот','девятисот'];
   function chunkGen(n, female) {
     let s = '';
     const h = Math.floor(n / 100), t = Math.floor((n % 100) / 10), u = n % 10;
@@ -515,29 +576,29 @@ function pointsDeclension(num) {
 }
 
 // =============================================
-// 4. СКЛОНЕНИЕ ФИО
+// 5. СКЛОНЕНИЕ ФИО
 // =============================================
 function splitPositionAndName(director) {
   const parts = director.trim().split(/\s+/);
   const positionWords = [
-    'генеральный', 'генерального', 'генеральному', 'генеральным', 'генеральном',
-    'исполнительный', 'исполнительного', 'исполнительному', 'исполнительным', 'исполнительном',
-    'финансовый', 'финансового', 'финансовому', 'финансовым', 'финансовом',
-    'коммерческий', 'коммерческого', 'коммерческому', 'коммерческим', 'коммерческом',
-    'технический', 'технического', 'техническому', 'техническим', 'техническом',
-    'директор', 'директора', 'директору', 'директором', 'директоре',
-    'президент', 'президента', 'президенту', 'президентом', 'президенте',
-    'председатель', 'председателя', 'председателю', 'председателем', 'председателе',
-    'руководитель', 'руководителя', 'руководителю', 'руководителем', 'руководителе',
-    'начальник', 'начальника', 'начальнику', 'начальником', 'начальнике',
-    'заместитель', 'заместителя', 'заместителю', 'заместителем', 'заместителе',
-    'зам', 'зам.',
-    'индивидуальный', 'индивидуального', 'индивидуальному', 'индивидуальным', 'индивидуальном',
-    'предприниматель', 'предпринимателя', 'предпринимателю', 'предпринимателем', 'предпринимателе',
+    'генеральный','генерального','генеральному','генеральным','генеральном',
+    'исполнительный','исполнительного','исполнительному','исполнительным','исполнительном',
+    'финансовый','финансового','финансовому','финансовым','финансовом',
+    'коммерческий','коммерческого','коммерческому','коммерческим','коммерческом',
+    'технический','технического','техническому','техническим','техническом',
+    'директор','директора','директору','директором','директоре',
+    'президент','президента','президенту','президентом','президенте',
+    'председатель','председателя','председателю','председателем','председателе',
+    'руководитель','руководителя','руководителю','руководителем','руководителе',
+    'начальник','начальника','начальнику','начальником','начальнике',
+    'заместитель','заместителя','заместителю','заместителем','заместителе',
+    'зам','зам.',
+    'индивидуальный','индивидуального','индивидуальному','индивидуальным','индивидуальном',
+    'предприниматель','предпринимателя','предпринимателю','предпринимателем','предпринимателе',
     'ип',
-    'исполняющий', 'исполняющая', 'исполняющего', 'исполняющей', 'исполняющему', 'исполняющим',
-    'обязанности', 'обязанностей', 'обязанностям', 'обязанностями', 'обязанностях',
-    'и.о.', 'ио', 'врио', 'врид'
+    'исполняющий','исполняющая','исполняющего','исполняющей','исполняющему','исполняющим',
+    'обязанности','обязанностей','обязанностям','обязанностями','обязанностях',
+    'и.о.','ио','врио','врид'
   ];
   let positionEnd = 0;
   for (let i = 0; i < parts.length; i++) {
@@ -647,12 +708,8 @@ function declineFIO(director) {
   const gender = detectGender(director);
   const parts = name.trim().split(/\s+/);
   const dp = declinePosition(position);
-  if (parts.length === 3) {
-    return `${dp} ${declineLastName(parts[0], gender)} ${declineFirstName(parts[1], gender)} ${declinePatronymic(parts[2], gender)}`;
-  }
-  if (parts.length === 2) {
-    return `${dp} ${declineLastName(parts[0], gender)} ${declineFirstName(parts[1], gender)}`;
-  }
+  if (parts.length === 3) return `${dp} ${declineLastName(parts[0], gender)} ${declineFirstName(parts[1], gender)} ${declinePatronymic(parts[2], gender)}`;
+  if (parts.length === 2) return `${dp} ${declineLastName(parts[0], gender)} ${declineFirstName(parts[1], gender)}`;
   return `${dp} ${name}`;
 }
 
@@ -673,109 +730,103 @@ function getInitials(director) {
 function getGender(director) { return detectGender(director); }
 
 // =============================================
-// 5. ШАБЛОНЫ ДОГОВОРОВ
+// 6. ШАБЛОНЫ ДОГОВОРОВ
 // =============================================
 const templates = {
   sout: {
-    executorId: 'ecolab',
-    label: 'СОУТ',
-    workType: 'СОУТ',
-    subjectNominative: 'специальная оценка условий труда',
+    executorId: 'ecolab', label: 'СОУТ', workType: 'СОУТ',
     subjectGenitive: 'специальной оценки условий труда',
     subjectHeader: 'на оказание услуг по проведению специальной оценки условий труда',
-    specName: 'Специальная оценка условий труда',
-    specUnit: 'Раб. мест',
+    specName: 'Специальная оценка условий труда', specUnit: 'Раб. мест',
     measureLabel: 'Кол-во рабочих мест',
-    resultText: 'Услуги ИСПОЛНИТЕЛЯ считаются оказанными после получения Заказчиком полного комплекта документов, определенного Федеральным законом Российской Федерации от 28 декабря 2013 г. N 426-ФЗ «О специальной оценке условий труда», Приложением №1 к Приказу Министерства труда и социальной защиты Российской Федерации от 21 ноября 2023 г. N 817н «Об утверждении методики проведения специальной оценки условий труда, классификатора вредных и (или) опасных производственных факторов, формы отчета о проведении специальной оценки условий труда и инструкции по ее заполнению», оформленных надлежащим образом и содержащих все необходимые сведения.',
-    specTotalNote: (totalWithKop, ndsRate, noVat) => noVat
-      ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ'
-      : `, в т.ч. НДС ${ndsRate}% в соответствии с п.п.1 п.8 ст 164 НК РФ`,
+    resultText: 'Услуги ИСПОЛНИТЕЛЯ считаются оказанными после получения Заказчиком полного комплекта документов, определенного Федеральным законом от 28 декабря 2013 г. N 426-ФЗ.',
+    specTotalNote: (t, n, noVat) => noVat ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ' : `, в т.ч. НДС ${n}% в соответствии с п.п.1 п.8 ст 164 НК РФ`,
     lawRefs: [
       'Федеральным законом Российской Федерации от 28 декабря 2013 г. N 426-ФЗ «О специальной оценке условий труда»',
-      'Приложением №1 к Приказу Министерства труда и социальной защиты Российской Федерации от 21 ноября 2023 г. N 817н «Об утверждении методики проведения специальной оценки условий труда, классификатора вредных и (или) опасных производственных факторов, формы отчета о проведении специальной оценки условий труда и инструкции по ее заполнению»'
+      'Приложением №1 к Приказу Министерства труда и социальной защиты РФ от 21 ноября 2023 г. N 817н'
     ],
     appendixTitle: 'СПЕЦИФИКАЦИЯ:'
   },
   risks: {
-    executorId: 'ecolab',
-    label: 'Оценка рисков',
-    workType: 'ОЦЕНКА РИСКОВ',
-    subjectNominative: 'оценка профессиональных рисков',
+    executorId: 'ecolab', label: 'Оценка рисков', workType: 'ОЦЕНКА РИСКОВ',
     subjectGenitive: 'оценки профессиональных рисков',
     subjectHeader: 'на оказание услуг по оценке профессиональных рисков',
-    specName: 'Оценка профессиональных рисков',
-    specUnit: 'Раб. мест',
+    specName: 'Оценка профессиональных рисков', specUnit: 'Раб. мест',
     measureLabel: 'Кол-во рабочих мест',
     resultText: 'Результатом оказания услуги является – Отчет по процедуре «Идентификация опасностей, оценка, контроль и анализ рисков» для Заказчика.',
-    specTotalNote: (totalWithKop, ndsRate, noVat) => noVat
-      ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ'
-      : `, в т.ч. НДС ${ndsRate}% в соответствии с п.п.1 п.8 ст 164 НК РФ`,
+    specTotalNote: (t, n, noVat) => noVat ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ' : `, в т.ч. НДС ${n}% в соответствии с п.п.1 п.8 ст 164 НК РФ`,
     lawRefs: [
-      'ГОСТ Р 58771-2019 МЕНЕДЖМЕНТ РИСКА. Технологии оценки риска',
-      'Р 2.2.2006-05. 2.2. Гигиена труда. Руководство по гигиенической оценке факторов рабочей среды и трудового процесса. Критерии и классификация условий труда',
-      'Приказ Минтруда РФ от 29.10.2021 N 776Н «Об утверждении Примерного положения о системе управления охраной труда»',
-      'Приказ Минтруда РФ от 31.01.2022 N 36 «Об утверждении рекомендаций по классификации, обнаружению, распознаванию и описанию опасностей»',
-      'Приказ Минтруда РФ от 28.12.2021 № 926 «Об утверждении рекомендаций по выбору методов оценки уровней профессиональных рисков и по снижению уровней таких рисков»'
+      'ГОСТ Р 58771-2019 МЕНЕДЖМЕНТ РИСКА',
+      'Р 2.2.2006-05',
+      'Приказ Минтруда РФ от 29.10.2021 N 776Н',
+      'Приказ Минтруда РФ от 31.01.2022 N 36',
+      'Приказ Минтруда РФ от 28.12.2021 № 926'
     ],
     appendixTitle: 'СПЕЦИФИКАЦИЯ:'
   },
   pk: {
-    executorId: 'ecolab',
-    label: 'ПК (ЭкоЛаб)',
-    workType: 'ПК',
-    subjectNominative: 'производственный контроль за условиями труда',
+    executorId: 'ecolab', label: 'ПК (ЭкоЛаб)', workType: 'ПК',
     subjectGenitive: 'производственного контроля за условиями труда',
     subjectHeader: 'на выполнение работ по производственному контролю за условиями труда',
-    specName: 'Производственный контроль (проведение измерений и оформление протоколов измерений)',
-    specUnit: 'точка',
-    measureLabel: 'Кол-во точек',
-    isPk: true,
-    resultText: 'Работы считаются выполненными после подписания Сторонами УПД и получения Заказчиком протоколов исследований.',
-    specTotalNote: (totalWithKop, ndsRate, noVat) => noVat
-      ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ'
-      : `, в том числе НДС ${ndsRate}% – ${totalWithKop}`,
+    specName: 'Производственный контроль', specUnit: 'точка',
+    measureLabel: 'Кол-во точек', isPk: true,
+    resultText: 'Работы считаются выполненными после подписания Сторонами УПД.',
+    specTotalNote: (t, n, noVat) => noVat ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ' : `, в том числе НДС ${n}% – ${t}`,
     lawRefs: [
-      'Федеральным законом от 28.12.2013 № 412-ФЗ «Об аккредитации в национальной системе аккредитации»',
-      'СП 2.2.3670-20 «Санитарно-эпидемиологические требования к условиям труда»',
-      'Приказом Минтруда России от 29.10.2021 N 776Н «Об утверждении Примерного положения о системе управления охраной труда»'
+      'Федеральным законом от 28.12.2013 № 412-ФЗ',
+      'СП 2.2.3670-20',
+      'Приказом Минтруда России от 29.10.2021 N 776Н'
     ],
     appendixTitle: 'СПЕЦИФИКАЦИЯ ЗАМЕРОВ'
   },
-
-  // ===== НОВЫЙ ШАБЛОН: Труд Партнёр — ППК + ПК =====
   pk_trud: {
-    executorId: 'trudpartner',
-    label: 'ПК (Труд Партнёр)',
-    workType: 'ПК',
-    subjectNominative: 'разработка программы производственного контроля и проведение производственного контроля',
+    executorId: 'trudpartner', label: 'ПК + ППК (Труд Партнёр)', workType: 'ПК',
     subjectGenitive: 'разработки программы производственного контроля и проведения производственного контроля',
     subjectHeader: 'на разработку программы производственного контроля и проведение производственного контроля',
-    specName: 'Разработка программы производственного контроля и проведение производственного контроля',
-    specUnit: 'усл.',
-    measureLabel: 'Кол-во точек',
-    isPk: true,
-    isTrudPk: true,
+    specName: 'Разработка программы ПК и проведение ПК', specUnit: 'усл.',
+    measureLabel: 'Кол-во точек', isPk: true, isTrudPk: true,
     resultText: 'Услуги по настоящему Договору считаются оказанными Исполнителем и принятыми Заказчиком с момента подписания Сторонами Акта об оказанных услугах.',
-    specTotalNote: (totalWithKop, ndsRate, noVat) => noVat
-      ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ'
-      : `, в том числе НДС ${ndsRate}% – ${totalWithKop}`,
+    specTotalNote: (t, n, noVat) => noVat ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ' : `, в том числе НДС ${n}% – ${t}`,
     lawRefs: [
-      'Федеральным законом от 30.03.1999 № 52-ФЗ «О санитарно-эпидемиологическом благополучии населения»',
-      'СП 2.2.3670-20 «Санитарно-эпидемиологические требования к условиям труда»',
-      'Приказом Минтруда России от 29.10.2021 N 776Н «Об утверждении Примерного положения о системе управления охраной труда»'
+      'Федеральным законом от 30.03.1999 № 52-ФЗ',
+      'СП 2.2.3670-20',
+      'Приказом Минтруда России от 29.10.2021 N 776Н'
     ],
     appendixTitle: 'СПЕЦИФИКАЦИЯ'
+  },
+  // ===== ЛАБОРАТОРНЫЙ КОНТРОЛЬ =====
+  lab: {
+    label: 'Лабораторный контроль',
+    workType: 'ЛАБ. КОНТРОЛЬ',
+    subjectGenitive: 'лабораторного контроля вредных и опасных производственных факторов',
+    subjectHeader: 'на оказание услуг по лабораторному контролю',
+    specName: 'Лабораторный контроль', specUnit: 'замер',
+    measureLabel: 'Кол-во замеров',
+    isLab: true,
+    resultText: 'Результатом оказанных услуг являются Протоколы измерений опасных и вредных производственных факторов.',
+    specTotalNote: (t, n, noVat) => noVat ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ (УСН)' : `, в т.ч. НДС ${n}%`,
+    lawRefs: [],
+    appendixTitle: 'СПЕЦИФИКАЦИЯ:'
   }
 };
 
-// Список шаблонов, доступных для каждого исполнителя
+// Лабораторный контроль доступен обоим исполнителям.
+// Для Труд Партнёр — жёстко "без НДС"
 const templatesByExecutor = {
-  ecolab: ['sout', 'risks', 'pk'],
-  trudpartner: ['pk_trud']
+  ecolab: ['sout', 'risks', 'pk', 'lab'],
+  trudpartner: ['pk_trud', 'lab']
 };
 
+// Для каких шаблонов какой исполнитель работает без НДС
+function isNoVatForTemplate(tplKey) {
+  const exec = currentExecutor();
+  if (exec.noVat) return true;                       // Труд Партнёр — всегда без НДС
+  if (tplKey === 'lab' && exec.id === 'ecolab') return false; // ЭкоЛаб+лаб — с НДС
+  return false;
+}
+
 // =============================================
-// 6. ГЕНЕРАЦИЯ РАЗДЕЛА 2 (СОУТ / РИСКИ)
+// 7. РАЗДЕЛ 2 ДЛЯ СОУТ/РИСКОВ
 // =============================================
 function generateSection2(totalWithKop, ndsRate, paymentMethod, noVat) {
   const vatClause = noVat
@@ -786,8 +837,6 @@ function generateSection2(totalWithKop, ndsRate, paymentMethod, noVat) {
   let clause22 = '';
   if (paymentMethod === '100') {
     clause22 = `<p><b>2.2.</b> Заказчик в течение 10 (Десяти) рабочих дней с даты подписания Договора и получения счета перечисляет ИСПОЛНИТЕЛЮ авансовый платеж, составляющий 100 % от общей стоимости Договора.</p>`;
-  } else if (paymentMethod === 'postpay') {
-    clause22 = `<p><b>2.2.</b> Заказчик оплачивает услуги Исполнителя в течение 10 (Десяти) рабочих дней с даты подписания Сторонами Универсального передаточного документа (УПД), подтверждающего оказание услуг в полном объеме. Датой оплаты считается дата поступления денежных средств на расчетный счет исполнителя.</p>`;
   } else {
     const [advance, final] = paymentMethod.split('/');
     const intro = `<p class="no-indent" style="text-indent:0;">Оплата по Договору осуществляется следующим способом:</p>`;
@@ -797,8 +846,17 @@ function generateSection2(totalWithKop, ndsRate, paymentMethod, noVat) {
   return vatClause + clause22 + clause23;
 }
 
+// Универсальная формулировка оплаты для лабораторного и ППК+ПК
+function paymentClauseText(paymentMethod) {
+  if (paymentMethod === '100') {
+    return 'Заказчик в течение 5 (Пяти) рабочих дней с даты подписания Договора и получения счета перечисляет Исполнителю 100 % предоплату стоимости услуг.';
+  }
+  const [advance, final] = paymentMethod.split('/');
+  return `Оплата производится в два этапа: авансовый платеж в размере ${advance}% от общей суммы Договора — в течение 5 (Пяти) рабочих дней с даты подписания Договора; окончательный расчет в размере ${final}% — в течение 5 (Пяти) рабочих дней с даты подписания Сторонами Акта об оказанных услугах.`;
+}
+
 // =============================================
-// 7. УПРАВЛЕНИЕ СПИСКОМ ПАРАМЕТРОВ ПК
+// 8. УПРАВЛЕНИЕ СПИСКОМ ПАРАМЕТРОВ ПК
 // =============================================
 let pkItems = [];
 
@@ -809,13 +867,9 @@ function pkRowHTML(idx, item) {
   }).join('');
   return `
     <div class="pk-row" data-idx="${idx}">
-      <select class="pk-name" onchange="onPkNameChange(${idx}, this.value)">
-        ${options}
-      </select>
-      <input type="number" class="pk-qty" value="${item.qty || 1}" min="1" placeholder="Кол-во"
-             oninput="onPkFieldChange(${idx}, 'qty', this.value)" />
-      <input type="number" class="pk-price" value="${item.price || 0}" min="0" step="0.01" placeholder="Цена"
-             oninput="onPkFieldChange(${idx}, 'price', this.value)" />
+      <select class="pk-name" onchange="onPkNameChange(${idx}, this.value)">${options}</select>
+      <input type="number" class="pk-qty" value="${item.qty || 1}" min="1" placeholder="Кол-во" oninput="onPkFieldChange(${idx}, 'qty', this.value)" />
+      <input type="number" class="pk-price" value="${item.price || 0}" min="0" step="0.01" placeholder="Цена" oninput="onPkFieldChange(${idx}, 'price', this.value)" />
       <button type="button" class="pk-del" onclick="removePkRow(${idx})" title="Удалить">✖</button>
     </div>`;
 }
@@ -872,18 +926,133 @@ function updatePkTotals() {
 }
 
 // =============================================
-// 8. ПОЛУЧЕНИЕ ИТОГОВ
+// 9. УПРАВЛЕНИЕ ЛАБОРАТОРНЫМ КОНТРОЛЕМ
 // =============================================
+let labItems = [
+  { name: 'Микроклимат', unit: 'Замер', qty: 4, price: 700 },
+  { name: 'ЭМИ от ПК', unit: 'Замер', qty: 1, price: 700 },
+  { name: 'Шум от ПК', unit: 'Замер', qty: 1, price: 700 },
+  { name: 'Освещенность', unit: 'Замер', qty: 4, price: 700 }
+];
+let labExtras = [
+  { name: 'Пример программы ППК', qty: 1, price: 0 }
+];
+
+function labRowHTML(idx, item) {
+  return `
+    <div class="lab-row" data-idx="${idx}">
+      <input type="text" value="${item.name || ''}" placeholder="Фактор" oninput="onLabFieldChange(${idx}, 'name', this.value)" />
+      <input type="text" value="${item.unit || ''}" placeholder="Ед." oninput="onLabFieldChange(${idx}, 'unit', this.value)" />
+      <input type="number" value="${item.qty || 0}" min="0" placeholder="Кол-во" oninput="onLabFieldChange(${idx}, 'qty', this.value)" />
+      <input type="number" value="${item.price || 0}" min="0" step="0.01" placeholder="Цена" oninput="onLabFieldChange(${idx}, 'price', this.value)" />
+      <button type="button" class="lab-del" onclick="removeLabRow(${idx})" title="Удалить">✖</button>
+    </div>`;
+}
+
+function labExtraRowHTML(idx, item) {
+  return `
+    <div class="lab-extra-row" data-idx="${idx}">
+      <input type="text" value="${item.name || ''}" placeholder="Название доп. услуги" oninput="onLabExtraFieldChange(${idx}, 'name', this.value)" />
+      <input type="number" value="${item.qty || 0}" min="0" placeholder="Кол-во" oninput="onLabExtraFieldChange(${idx}, 'qty', this.value)" />
+      <input type="number" value="${item.price || 0}" min="0" step="0.01" placeholder="Цена" oninput="onLabExtraFieldChange(${idx}, 'price', this.value)" />
+      <button type="button" class="lab-del" onclick="removeLabExtraRow(${idx})" title="Удалить">✖</button>
+    </div>`;
+}
+
+function renderLabRows() {
+  const c = document.getElementById('labRowsContainer');
+  if (!c) return;
+  c.innerHTML = labItems.map((it, i) => labRowHTML(i, it)).join('');
+  updateLabTotals();
+}
+
+function renderLabExtras() {
+  const c = document.getElementById('labExtraContainer');
+  if (!c) return;
+  c.innerHTML = labExtras.map((it, i) => labExtraRowHTML(i, it)).join('');
+  updateLabTotals();
+}
+
+function addLabRow() {
+  labItems.push({ name: '', unit: 'Замер', qty: 1, price: 700 });
+  renderLabRows();
+  updatePreview();
+}
+
+function removeLabRow(idx) {
+  if (labItems.length <= 1) { alert('Должна остаться хотя бы одна строка'); return; }
+  labItems.splice(idx, 1);
+  renderLabRows();
+  updatePreview();
+}
+
+function addLabExtraRow() {
+  labExtras.push({ name: '', qty: 1, price: 0 });
+  renderLabExtras();
+  updatePreview();
+}
+
+function removeLabExtraRow(idx) {
+  labExtras.splice(idx, 1);
+  renderLabExtras();
+  updatePreview();
+}
+
+function onLabFieldChange(idx, field, value) {
+  if (field === 'qty' || field === 'price') labItems[idx][field] = parseFloat(value) || 0;
+  else labItems[idx][field] = value;
+  updateLabTotals();
+  updatePreview();
+}
+
+function onLabExtraFieldChange(idx, field, value) {
+  if (field === 'qty' || field === 'price') labExtras[idx][field] = parseFloat(value) || 0;
+  else labExtras[idx][field] = value;
+  updateLabTotals();
+  updatePreview();
+}
+
+function updateLabTotals() {
+  const totalQty = labItems.reduce((s, it) => s + (parseFloat(it.qty) || 0), 0);
+  const totalSum = labItems.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)), 0);
+  const extraSum = labExtras.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)), 0);
+  const qtyEl = document.getElementById('labTotalQty');
+  const sumEl = document.getElementById('labTotalSum');
+  const extraEl = document.getElementById('labExtraSum');
+  if (qtyEl) qtyEl.textContent = totalQty;
+  if (sumEl) sumEl.textContent = totalSum.toLocaleString('ru-RU', {maximumFractionDigits: 2}) + ' ₽';
+  if (extraEl) extraEl.textContent = extraSum.toLocaleString('ru-RU', {maximumFractionDigits: 2}) + ' ₽';
+}
+
+// =============================================
+// 10. ИТОГИ
+// =============================================
+function getPaymentMethod() {
+  const sel = document.getElementById('paymentMethod').value;
+  if (sel === 'custom') {
+    const adv = parseFloat(document.getElementById('customAdvance').value) || 0;
+    const fin = parseFloat(document.getElementById('customFinal').value) || 0;
+    return `${adv}/${fin}`;
+  }
+  return sel;
+}
+
 function getTotals() {
   const tplKey = document.getElementById('templateType').value || 'sout';
   const tpl = templates[tplKey];
   const exec = currentExecutor();
-  const noVat = !!exec.noVat;
+  const noVat = isNoVatForTemplate(tplKey);
   const ndsRate = noVat ? 0 : (parseFloat(document.getElementById('ndsRate').value) || 5);
 
   let totalWithNds, qty, pricePerUnit;
 
-  if (tpl.isPk) {
+  if (tpl.isLab) {
+    const mainSum = labItems.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)), 0);
+    const extraSum = labExtras.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)), 0);
+    totalWithNds = mainSum + extraSum;
+    qty = labItems.reduce((s, it) => s + (parseFloat(it.qty) || 0), 0);
+    pricePerUnit = 0;
+  } else if (tpl.isPk) {
     let pkSum = pkItems.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)), 0);
     if (tpl.isTrudPk) {
       const includeProgram = document.getElementById('pkIncludeProgram')?.checked;
@@ -914,7 +1083,7 @@ function getTotals() {
 }
 
 // =============================================
-// 9. ОПРЕДЕЛЕНИЕ ИП
+// 11. ОПРЕДЕЛЕНИЕ ИП
 // =============================================
 function detectIP() {
   const opf = (document.getElementById('clientOpf').value || '').trim();
@@ -928,12 +1097,12 @@ function detectIP() {
 }
 
 // =============================================
-// 10. ГЕНЕРАЦИЯ ДОГОВОРА
+// 12. ГЕНЕРАЦИЯ ДОГОВОРА
 // =============================================
 function generateContractHTML() {
   const { totalWithNds, totalNds, totalWithoutNds, ndsRate, qty, pricePerUnit, tpl, tplKey, exec, noVat } = getTotals();
 
-  const number = document.getElementById('contractNumber').value || 'П-1055/СОУТ';
+  const number = document.getElementById('contractNumber').value || '';
   const dateRaw = document.getElementById('contractDate').value;
   const city = document.getElementById('contractCity').value || 'г. Санкт-Петербург';
 
@@ -955,11 +1124,9 @@ function generateContractHTML() {
   const clientOpfShort = document.getElementById('clientOpfShort').value || '';
   const clientName = document.getElementById('clientName').value || '';
   const cleanName = clientName.replace(/^[«"]|[»"]$/g, '').trim();
-
   const ipFio = cleanName.replace(/^(ИП|Индивидуальный\s+предприниматель)\s+/i, '').trim();
 
   let clientFullName, clientShortWithOpf;
-
   if (isIP) {
     clientFullName = `Индивидуальный предприниматель ${ipFio}`.trim();
     clientShortWithOpf = clientFullName;
@@ -968,15 +1135,14 @@ function generateContractHTML() {
     clientShortWithOpf = clientOpfShort ? `${clientOpfShort} «${cleanName}»` : `«${cleanName}»`;
   }
 
-  const clientAddress = document.getElementById('clientAddress').value || 'г. Москва, ул. Примерная, д. 1';
+  const clientAddress = document.getElementById('clientAddress').value || '';
   const clientFactAddress = document.getElementById('clientFactAddress').value || '';
-  const clientInn = document.getElementById('clientInn').value || '0000000000';
+  const clientInn = document.getElementById('clientInn').value || '';
   const clientKpp = document.getElementById('clientKpp').value || '';
   const clientOgrn = document.getElementById('clientOgrn').value || '';
   const clientOkpo = document.getElementById('clientOkpo').value || '';
 
   const clientDirectorRaw = isIP ? '' : (document.getElementById('clientDirector').value || '');
-
   const clientDirectorGenitive = isIP ? '' : declineFIO(clientDirectorRaw);
   const clientActing = isIP ? '' : (getGender(clientDirectorRaw) === 'female' ? 'действующей' : 'действующего');
 
@@ -987,22 +1153,18 @@ function generateContractHTML() {
       const surname = parts[0];
       const initials = parts.slice(1).map(p => (p.charAt(0) || '').toUpperCase() + '.').join('');
       clientInitials = `${surname} ${initials}`;
-    } else {
-      clientInitials = ipFio;
-    }
-  } else {
-    clientInitials = getInitials(clientDirectorRaw);
-  }
+    } else clientInitials = ipFio;
+  } else clientInitials = getInitials(clientDirectorRaw);
 
   const executorDirectorGenitive = declineFIO(exec.director);
   const executorInitials = getInitials(exec.director);
   const executorActing = getGender(exec.director) === 'female' ? 'действующей' : 'действующего';
 
-  const clientBank = document.getElementById('clientBank').value || 'р/с 00000000000000000000 в АО «Банк»';
-  const clientKs = document.getElementById('clientKs').value || '30101810100000000000';
-  const clientBik = document.getElementById('clientBik').value || '044525000';
+  const clientBank = document.getElementById('clientBank').value || '';
+  const clientKs = document.getElementById('clientKs').value || '';
+  const clientBik = document.getElementById('clientBik').value || '';
 
-  const paymentMethod = document.getElementById('paymentMethod').value || '100';
+  const paymentMethod = getPaymentMethod();
 
   document.getElementById('totalWithNds').textContent = Math.round(totalWithNds).toLocaleString('ru-RU') + ' ₽';
   document.getElementById('totalNds').textContent = Math.round(totalNds).toLocaleString('ru-RU') + ' ₽';
@@ -1013,88 +1175,75 @@ function generateContractHTML() {
 
   // Спецификация
   let tableHTML = '';
-  if (tpl.isPk) {
+
+  if (tpl.isLab) {
+    const rows = labItems.map((it, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${it.name || ''}</td>
+        <td>${it.unit || ''}</td>
+        <td>${it.qty || 0}</td>
+        <td>${(it.price || 0).toLocaleString('ru-RU')}</td>
+        <td>${((it.qty || 0) * (it.price || 0)).toLocaleString('ru-RU')}</td>
+      </tr>`).join('');
+
+    const extraRows = labExtras.map(it => `
+      <tr>
+        <td colspan="2">${it.name || ''}</td>
+        <td>${it.qty || 0}</td>
+        <td>${(it.price || 0) ? (it.price).toLocaleString('ru-RU') : '—'}</td>
+        <td>${((it.qty || 0) * (it.price || 0)) ? ((it.qty || 0) * (it.price || 0)).toLocaleString('ru-RU') : '—'}</td>
+      </tr>`).join('');
+
+    tableHTML = `
+    <table class="data">
+      <tr>
+        <th>№</th>
+        <th>Наименование фактора</th>
+        <th>Ед. изм.</th>
+        <th>Кол-во</th>
+        <th>Цена</th>
+        <th>Стоимость</th>
+      </tr>
+      ${rows}
+      ${labExtras.length ? `<tr><td colspan="6" style="text-align:left;font-weight:bold;">Дополнительные услуги</td></tr>${extraRows}` : ''}
+      <tr>
+        <td colspan="5" style="text-align:right;"><b>Итого:</b></td>
+        <td><b>${totalWithNds.toLocaleString('ru-RU')}</b></td>
+      </tr>
+    </table>`;
+  } else if (tpl.isPk) {
     let rows = '';
     let idx = 1;
-
     if (tpl.isTrudPk) {
       const includeProgram = document.getElementById('pkIncludeProgram')?.checked;
       const includeMeasure = document.getElementById('pkIncludeMeasure')?.checked;
       const programPrice = parseFloat(document.getElementById('pkProgramPrice')?.value) || 0;
-
       if (includeProgram) {
-        rows += `
-          <tr>
-            <td>${idx++}</td>
-            <td>Разработка программы производственного контроля</td>
-            <td>1</td>
-            <td>${programPrice.toLocaleString('ru-RU', {maximumFractionDigits: 2})}</td>
-            <td>${programPrice.toLocaleString('ru-RU', {maximumFractionDigits: 2})}</td>
-          </tr>`;
+        rows += `<tr><td>${idx++}</td><td>Разработка программы производственного контроля</td><td>1</td><td>${programPrice.toLocaleString('ru-RU')}</td><td>${programPrice.toLocaleString('ru-RU')}</td></tr>`;
       }
       if (includeMeasure) {
-        rows += pkItems.map((it) => `
-          <tr>
-            <td>${idx++}</td>
-            <td>${it.name || ''}</td>
-            <td>${it.qty || 0}</td>
-            <td>${it.price ? parseFloat(it.price).toLocaleString('ru-RU', {maximumFractionDigits: 2}) : '0'}</td>
-            <td>${((it.qty || 0) * (it.price || 0)).toLocaleString('ru-RU', {maximumFractionDigits: 2})}</td>
-          </tr>`).join('');
+        rows += pkItems.map(it => `<tr><td>${idx++}</td><td>${it.name || ''}</td><td>${it.qty || 0}</td><td>${(it.price || 0).toLocaleString('ru-RU')}</td><td>${((it.qty || 0) * (it.price || 0)).toLocaleString('ru-RU')}</td></tr>`).join('');
       }
     } else {
-      rows = pkItems.map((it, i) => `
-        <tr>
-          <td>${i + 1}</td>
-          <td>${it.name || ''}</td>
-          <td>${it.qty || 0}</td>
-          <td>${it.price ? parseFloat(it.price).toLocaleString('ru-RU', {maximumFractionDigits: 2}) : '0'}</td>
-          <td>${((it.qty || 0) * (it.price || 0)).toLocaleString('ru-RU', {maximumFractionDigits: 2})}</td>
-        </tr>`).join('');
+      rows = pkItems.map((it, i) => `<tr><td>${i + 1}</td><td>${it.name || ''}</td><td>${it.qty || 0}</td><td>${(it.price || 0).toLocaleString('ru-RU')}</td><td>${((it.qty || 0) * (it.price || 0)).toLocaleString('ru-RU')}</td></tr>`).join('');
     }
-
     tableHTML = `
     <table class="data">
-      <tr>
-        <th>№</th>
-        <th>Наименование услуги</th>
-        <th>Кол-во ед.</th>
-        <th>Стоимость за единицу</th>
-        <th>Стоимость общая</th>
-      </tr>
+      <tr><th>№</th><th>Наименование услуги</th><th>Кол-во ед.</th><th>Стоимость за единицу</th><th>Стоимость общая</th></tr>
       ${rows}
-      <tr>
-        <td colspan="4" style="text-align:right;"><b>Итого:</b></td>
-        <td><b>${totalWithNds.toLocaleString('ru-RU', {maximumFractionDigits: 2})}</b></td>
-      </tr>
+      <tr><td colspan="4" style="text-align:right;"><b>Итого:</b></td><td><b>${totalWithNds.toLocaleString('ru-RU')}</b></td></tr>
     </table>`;
   } else {
     tableHTML = `
     <table class="data">
-      <tr>
-        <th>№</th>
-        <th>Наименование услуг по настоящему договору</th>
-        <th>Кол-во</th>
-        <th>Ед.</th>
-        <th>Цена, в т.ч. НДС</th>
-        <th>Сумма, в т.ч. НДС</th>
-      </tr>
-      <tr>
-        <td>1</td>
-        <td>${tpl.specName}</td>
-        <td>${qty}</td>
-        <td>${tpl.specUnit}</td>
-        <td>${pricePerUnit.toLocaleString('ru-RU', {maximumFractionDigits: 2})}</td>
-        <td>${totalWithNds.toLocaleString('ru-RU', {maximumFractionDigits: 2})}</td>
-      </tr>
-      <tr>
-        <td colspan="5" style="text-align:right;"><b>Итого:</b></td>
-        <td><b>${totalWithNds.toLocaleString('ru-RU', {maximumFractionDigits: 2})}</b></td>
-      </tr>
+      <tr><th>№</th><th>Наименование услуг по настоящему договору</th><th>Кол-во</th><th>Ед.</th><th>Цена</th><th>Сумма</th></tr>
+      <tr><td>1</td><td>${tpl.specName}</td><td>${qty}</td><td>${tpl.specUnit}</td><td>${pricePerUnit.toLocaleString('ru-RU')}</td><td>${totalWithNds.toLocaleString('ru-RU')}</td></tr>
+      <tr><td colspan="5" style="text-align:right;"><b>Итого:</b></td><td><b>${totalWithNds.toLocaleString('ru-RU')}</b></td></tr>
     </table>`;
   }
 
-  // ----- ПОДПИСАНТЫ -----
+  // Подписанты
   const clientSigBlock = isIP
     ? `Индивидуальный предприниматель<br><br><br>________________________ / ${clientInitials} /`
     : `${getPositionOnly(clientDirectorRaw)}<br>${clientShortWithOpf}<br><br>________________________ / ${clientInitials} /`;
@@ -1104,21 +1253,16 @@ function generateContractHTML() {
     <table class="sig-table" style="width:100%;border:none;border-collapse:collapse;margin-top:24px;">
       <tr>
         <td style="width:50%;vertical-align:top;border:none;padding:0 12px 0 0;text-align:left;">
-          <b>ЗАКАЗЧИК:</b><br>
-          ${clientSigBlock}
+          <b>ЗАКАЗЧИК:</b><br>${clientSigBlock}
         </td>
         <td style="width:50%;vertical-align:top;border:none;padding:0 0 0 12px;text-align:left;">
-          <b>ИСПОЛНИТЕЛЬ:</b><br>
-          ${getPositionOnly(exec.director)}<br>
-          ${exec.shortName}<br>
-          <br>
-          ________________________ / ${executorInitials} /
+          <b>ИСПОЛНИТЕЛЬ:</b><br>${getPositionOnly(exec.director)}<br>${exec.shortName}<br><br>________________________ / ${executorInitials} /
         </td>
       </tr>
     </table>
   </div>`;
 
-  // ----- РЕКВИЗИТЫ -----
+  // Реквизиты
   let clientRequisites;
   if (isIP) {
     clientRequisites = `
@@ -1163,7 +1307,7 @@ function generateContractHTML() {
       </tr>
     </table>`;
 
-  // ----- ПРЕАМБУЛА -----
+  // Преамбула
   let preamble;
   if (isIP) {
     const ogrnip = clientOgrn || '__________';
@@ -1176,24 +1320,97 @@ function generateContractHTML() {
       <p class="no-indent">${exec.fullName} (далее по тексту ${exec.shortName}), в лице ${executorDirectorGenitive}, ${executorActing} на основании ${exec.basis}, именуемое в дальнейшем «ИСПОЛНИТЕЛЬ», с другой стороны, совместно именуемые Стороны, заключили настоящий Договор о нижеследующем:</p>`;
   }
 
-  // === ГЛАВНАЯ ЧАСТЬ ===
+  // Главная часть
   let mainPart = '';
 
-  if (tpl.isPk && !tpl.isTrudPk) {
-    // ===== ПК от ЭкоЛаб (старый шаблон) =====
-    const pkAddress = document.getElementById('pkAddress').value || clientAddress;
-    const pkDateFrom = document.getElementById('pkDateFrom').value;
-    const pkDateTo = document.getElementById('pkDateTo').value;
-    let pkFromStr = '', pkToStr = '';
-    if (pkDateFrom) {
-      const [y, m, d] = pkDateFrom.split('-').map(Number);
-      pkFromStr = `«${String(d).padStart(2, '0')}» ${months[m - 1]} ${y} г.`;
-    }
-    if (pkDateTo) {
-      const [y, m, d] = pkDateTo.split('-').map(Number);
-      pkToStr = `«${String(d).padStart(2, '0')}» ${months[m - 1]} ${y} г.`;
-    }
+  if (tpl.isLab) {
+    // ===== ЛАБОРАТОРНЫЙ КОНТРОЛЬ =====
+    const labAddress = document.getElementById('labAddress').value || clientAddress;
+    const totalQty = labItems.reduce((s, it) => s + (parseFloat(it.qty) || 0), 0);
+    const totalQtyWords = numToWordsGenitive(totalQty);
+    const totalStr = noVat
+      ? `<b>${totalWithKop}</b>, НДС не облагается в соответствии с положениями главы 26.2 Налогового кодекса Российской Федерации (УСН).`
+      : `<b>${totalWithKop}</b>, в том числе НДС ${ndsRate}% – ${totalNds.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} руб.`;
 
+    mainPart = `
+  <div>
+    <div style="font-size:13pt;font-weight:700;text-align:center;"><b>ДОГОВОР № ${number}</b></div>
+    <div style="font-size:13pt;font-weight:700;text-align:center;"><b>${tpl.subjectHeader}</b></div>
+    <br>
+    <table style="width:100%;border:none;border-collapse:collapse;margin:0;">
+      <tr>
+        <td style="border:none;text-align:left;padding:0;vertical-align:top;">${city}</td>
+        <td style="border:none;text-align:right;padding:0;vertical-align:top;font-weight:bold;">${dateQuoted}</td>
+      </tr>
+    </table>
+    <div style="height:18px;"></div>
+    ${preamble}
+
+    <div class="section-title">1. ПРЕДМЕТ ДОГОВОРА</div>
+    <p><b>1.1.</b> Исполнитель обязуется по заданию Заказчика оказать услуги по лабораторному контролю вредных и опасных производственных факторов на рабочих местах ${clientShortWithOpf}, предоставить Заказчику Протоколы измерений опасных и вредных производственных факторов, а Заказчик обязуется принять и оплатить оказанные услуги.</p>
+    <p><b>1.2.</b> Услуги оказываются согласно Спецификации (Приложение №1 к настоящему Договору), которая является неотъемлемой частью настоящего Договора.</p>
+    <p><b>1.3.</b> Результатом оказанных услуг являются Протоколы измерений опасных и вредных производственных факторов.</p>
+
+    <div class="section-title">2. ОТВЕТСТВЕННОСТЬ И ОБЯЗАННОСТИ СТОРОН</div>
+    <p><b>2.1. Исполнитель обязуется:</b></p>
+    <p>– обеспечивать оказание услуг в соответствии с действующим законодательством в сроки и в порядке, установленные в настоящем Договоре и приложениях к нему;</p>
+    <p>– обеспечить надлежащее оказание услуг.</p>
+    <p><b>2.2. Заказчик обязуется:</b></p>
+    <p>– предоставлять, по письменному запросу Исполнителя, в полном объеме необходимую для оказания услуг документацию;</p>
+    <p>– обеспечить доступ к рабочим местам Заказчика специалистов Исполнителя;</p>
+    <p>– оплатить оказанные услуги.</p>
+    <p><b>2.3.</b> Заказчик несет ответственность за предоставление недостоверной информации или непредоставление информации, необходимой для оказания услуг.</p>
+
+    <div class="section-title">3. ПОРЯДОК ОКАЗАНИЯ УСЛУГ</div>
+    <p><b>3.1.</b> Настоящий Договор вступает в силу с даты его подписания Сторонами и действует по 31 декабря текущего года. В случае, если ни одна из Сторон не заявит о своем намерении прекратить отношения по Договору за 15 календарных дней до истечения срока его действия, Договор считается пролонгированным на тех же условиях на каждый следующий календарный год.</p>
+    <p><b>3.2.</b> Услуги, являющиеся предметом настоящего Договора, оказываются единовременно в течение 30 календарных дней с даты подписания Договора.</p>
+    <p><b>3.3.</b> Исполнитель обязан в сроки, указанные в настоящем Договоре, предоставить отчетные документы по выполненным услугам: протоколы испытаний и измерений, проведенные в ходе лабораторных исследований.</p>
+    <p><b>3.4.</b> Заказчик обязан в течение пяти рабочих дней после представления Исполнителем Акта приема-сдачи фактически оказанных услуг подписать вышеуказанный Акт или предоставить мотивированный отказ с указанием необходимых доработок.</p>
+
+    <div class="section-title">4. СТОИМОСТЬ УСЛУГ И ПОРЯДОК РАСЧЕТОВ</div>
+    <p><b>4.1.</b> Стоимость услуг по настоящему Договору составляет ${totalStr}</p>
+    <p><b>4.2.</b> ${paymentClauseText(paymentMethod)}</p>
+
+    <div class="section-title">5. ОТВЕТСТВЕННОСТЬ СТОРОН</div>
+    <p><b>5.1.</b> За невыполнение или ненадлежащее выполнение своих обязательств по настоящему Договору Стороны несут ответственность, установленную действующим законодательством.</p>
+    <p><b>5.2.</b> Исполнитель несет ответственность за достоверность, качество и полноту материалов, предоставляемых по результатам оказания услуг.</p>
+    <p><b>5.3.</b> Заказчик несет ответственность за предоставление недостоверной информации или непредоставление информации, необходимой для оказания услуг.</p>
+    <p><b>5.4.</b> В случае если «Заказчику» на основании решения налогового органа будут предъявлены требования или приняты меры имущественного характера по причине неисполнения «Исполнителем» своих налоговых обязательств, связанных с исполнением настоящего Договора, «Исполнитель» обязуется возместить «Заказчику» все расходы, связанные с погашением предъявленных требований.</p>
+    <p><b>5.5.</b> В случае просрочки выполнения работ по настоящему Договору Исполнитель на основании письменного требования Заказчика уплачивает последнему неустойку в размере 0,03% от стоимости не оказанных в срок Услуг за каждый день просрочки.</p>
+
+    <div class="section-title">6. АРБИТРАЖ</div>
+    <p><b>6.1.</b> Все споры, которые могут возникнуть из настоящего Договора или в связи с его исполнением и которые не удалось решить путем переговоров, подлежат разрешению в Арбитражном суде по месту нахождения Истца.</p>
+
+    <div class="section-title">7. ПЕРСОНАЛЬНЫЕ ДАННЫЕ</div>
+    <p><b>7.1.</b> Стороны утвердили нижеследующие положения по обработке персональных данных, предоставляемых друг другу и обрабатываемых Сторонами в целях исполнения настоящего Договора.</p>
+    <p><b>7.2.</b> Ответственность за получение согласия на обработку персональных данных возлагается на передающую Сторону. Передача персональных данных без согласия субъекта ПДн запрещается.</p>
+    <p><b>7.3.</b> Стороны в целях исполнения настоящего Договора, руководствуясь положениями Федерального закона от 27.07.2006 года № 152-ФЗ «О персональных данных», предоставляют друг другу право осуществлять обработку персональных данных.</p>
+    <p><b>7.4.</b> Каждая из Сторон на основании соответствующего письменного запроса предоставляет другой Стороне подтверждение факта получения согласия субъектов на осуществление передачи и обработки их персональных данных.</p>
+    <p><b>7.5.</b> Требование о прекращении обработки персональных данных должно быть направлено одной Стороной в форме соответствующего уведомления в простой письменной форме в адрес другой Стороны.</p>
+    <p><b>7.6.</b> Каждая из Сторон обязуется обеспечивать конфиденциальность персональных данных, полученных от другой Стороны, в соответствии с требованиями статьи 7 Федерального закона от 27.07.2006 года № 152-ФЗ «О персональных данных».</p>
+    <p><b>7.7.</b> Каждая из Сторон обязуется возместить другой Стороне убытки в размере документально подтвержденного реального ущерба, причиненного вследствие нарушения этой Стороной конфиденциальности полученных персональных данных при их обработке.</p>
+
+    <div class="section-title">8. ПРОЧИЕ УСЛОВИЯ</div>
+    <p><b>8.1.</b> Стороны могут изменять и дополнять условия настоящего Договора путем составления документов, являющихся неотъемлемыми частями Договора.</p>
+    <p><b>8.2.</b> Все изменения и дополнения к настоящему Договору будут действительны только в том случае, если они совершены в письменной форме и подписаны Исполнителем и Заказчиком.</p>
+    <p><b>8.3.</b> Настоящий Договор вступает в силу со дня его подписания обеими Сторонами и действует в течение года.</p>
+    <p><b>8.4.</b> Если одна из Сторон за 15 дней до окончания срока действия данного Договора не известит другую Сторону о расторжении Договора, то срок его действия продлевается на такой же период.</p>
+    <p><b>8.5.</b> Договор может быть расторгнут по инициативе одной из Сторон. При расторжении Договора по инициативе Заказчика по причинам, не зависящим от Исполнителя, оплата производится за фактически оказанные услуги.</p>
+    <p><b>8.6.</b> При возникновении форс-мажорных обстоятельств срок исполнения работ сдвигается соразмерно времени, в течение которого будут действовать такие обстоятельства.</p>
+    <p><b>8.7.</b> Сторона, для которой создалась невозможность исполнения обязательств по настоящему Договору, должна известить об этом другую Сторону в течение суток.</p>
+    <p><b>8.8.</b> Во всем остальном Стороны руководствуются действующим законодательством.</p>
+    <p><b>8.9.</b> Настоящий Договор составлен в 2-х экземплярах, имеющих равную юридическую силу.</p>
+
+    <div class="section-title">9. ПРИЛОЖЕНИЯ К НАСТОЯЩЕМУ ДОГОВОРУ</div>
+    <p>1. Спецификация.</p>
+
+    <div class="section-title">10. РЕКВИЗИТЫ СТОРОН</div>
+    ${requisitesHTML}
+    ${signaturesHTML}
+  </div>`;
+  } else if (tpl.isPk && !tpl.isTrudPk) {
+    // ===== ПК ЭКОЛАБ =====
+    const pkAddress = document.getElementById('pkAddress').value || clientAddress;
     const totalQty = pkItems.reduce((s, it) => s + (parseFloat(it.qty) || 0), 0);
     const totalQtyWordsGen = numToWordsGenitive(totalQty);
     const specList = pkItems.map(it => it.name).filter(Boolean).join(', ');
@@ -1213,41 +1430,36 @@ function generateContractHTML() {
     ${preamble}
 
     <div class="section-title">1. ПРЕДМЕТ ДОГОВОРА</div>
-    <p>1.1. Исполнитель обязуется выполнить в соответствии с Приложением №1 к договору работы по проведению производственного контроля за условиями труда (лабораторно-инструментальные исследования параметров: ${specList}) на ${totalQty} (${totalQtyWordsGen}) ${pointsDeclension(totalQty)} (далее – «Работы») по адресу: ${pkAddress}, с оформлением протоколов исследований по итогам Работ, а Заказчик обязуется принять их результаты и оплатить выполненные Работы в соответствии с условиями настоящего договора.</p>
+    <p>1.1. Исполнитель обязуется выполнить в соответствии с Приложением №1 к договору работы по проведению производственного контроля за условиями труда (лабораторно-инструментальные исследования параметров: ${specList}) на ${totalQty} (${totalQtyWordsGen}) ${pointsDeclension(totalQty)} по адресу: ${pkAddress}, с оформлением протоколов исследований по итогам Работ, а Заказчик обязуется принять их результаты и оплатить выполненные Работы.</p>
 
     <div class="section-title">2. ПРАВА И ОБЯЗАННОСТИ СТОРОН</div>
     <p><b>2.1. Исполнитель имеет право:</b></p>
-    <p>2.1.1. Сдать результаты выполненных Работ Заказчику раньше срока, установленного в п. 4.1. Договора, без ухудшения качества и увеличения стоимости Работ, установленных настоящим договором.</p>
-    <p>2.1.2. По взаимному согласованию с Заказчиком привлекать к исполнению своих обязательств третьих лиц. В этом случае Исполнитель несет перед Заказчиком полную ответственность за неисполнение или ненадлежащее исполнение привлеченными третьими лицами обязательств по настоящему договору.</p>
+    <p>2.1.1. Сдать результаты выполненных Работ Заказчику раньше срока без ухудшения качества и увеличения стоимости Работ.</p>
+    <p>2.1.2. По взаимному согласованию с Заказчиком привлекать к исполнению своих обязательств третьих лиц.</p>
     <p><b>2.2. Исполнитель обязан:</b></p>
     <p>2.2.1. Выполнить Работы с надлежащим качеством и в соответствии с действующим законодательством РФ.</p>
-    <p>2.2.2. Выполнить Работы в полном объёме и в срок, указанный в п. 4.1. настоящего договора.</p>
-    <p>2.2.3. При досрочном выполнении Работ уведомить Заказчика не позже чем за 3 (три) рабочих дня до предполагаемой даты их сдачи.</p>
-    <p>2.2.4. Устранить, в согласованные Сторонами сроки, но не более 30 (тридцати) календарных дней, недостатки, выявленные Заказчиком во время приемки выполненных Исполнителем Работ, в порядке, предусмотренном в п. 5.2. настоящего договора.</p>
+    <p>2.2.2. Выполнить Работы в полном объёме и в срок.</p>
+    <p>2.2.3. Устранить недостатки, выявленные Заказчиком во время приемки.</p>
     <p><b>2.3. Заказчик имеет право:</b></p>
-    <p>2.3.1. Запросить у Исполнителя (и/или привлекаемого третьего лица) копии надлежаще заверенных документов, подтверждающих его право на выполнение Работ по настоящему договору, в результате прохождения процедуры аккредитации в соответствии с Федеральным законом от 28.12.2013 № 412-ФЗ «Об аккредитации в национальной системе аккредитации».</p>
+    <p>2.3.1. Запросить у Исполнителя копии надлежаще заверенных документов, подтверждающих его право на выполнение Работ.</p>
     <p><b>2.4. Заказчик обязан:</b></p>
-    <p>2.4.1. После подписания настоящего договора в течение 2 (двух) рабочих дней, на основании письменных запросов Исполнителя, предоставить всю необходимую для выполнения Работ информацию и документацию.</p>
-    <p>2.4.2. Обеспечить допуск представителей Исполнителя на территорию Заказчика для проведения инструментальных измерений и исследований.</p>
-    <p>2.4.3. Своевременно производить оплату по настоящему договору в порядке, предусмотренном в п. 3.2. Договора.</p>
-    <p>2.4.4. При досрочном выполнении Исполнителем Работ досрочно их принять и оплатить в соответствии с условиями настоящего договора.</p>
+    <p>2.4.1. Предоставить всю необходимую для выполнения Работ информацию и документацию.</p>
+    <p>2.4.2. Обеспечить допуск представителей Исполнителя на территорию Заказчика.</p>
+    <p>2.4.3. Своевременно производить оплату по настоящему договору.</p>
 
     <div class="section-title">3. СТОИМОСТЬ РАБОТ И ПОРЯДОК РАСЧЕТОВ</div>
     <p><b>3.1.</b> Стоимость Работ составляет <b>${totalWithKop}</b>${noVat ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ.' : `, в том числе НДС ${ndsRate}% – ${totalNds.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} руб.`}</p>
-    ${paymentMethod === '100' ? '<p><b>3.2.</b> Оплата производится по 100% предоплате.</p>' :
-      paymentMethod === 'postpay' ? '<p><b>3.2.</b> Оплата производится в течение 10 (десяти) рабочих дней после подписания УПД.</p>' :
-      `<p><b>3.2.</b> Оплата производится в следующем порядке: аванс ${paymentMethod.split('/')[0]}% в течение 5 рабочих дней после выставления счета, окончательный расчёт ${paymentMethod.split('/')[1]}% — после подписания УПД.</p>`}
-    <p><b>3.3.</b> Все платежи по настоящему договору осуществляются безналичным путём по реквизитам, указанным в разделе 9 Договора.</p>
+    <p><b>3.2.</b> ${paymentClauseText(paymentMethod)}</p>
+    <p><b>3.3.</b> Все платежи по настоящему договору осуществляются безналичным путём по реквизитам, указанным в разделе 8 Договора.</p>
 
     <div class="section-title">4. СРОКИ ВЫПОЛНЕНИЯ РАБОТ</div>
-    <p><b>4.1.</b> Сроки выполнения Работ по настоящему договору${pkFromStr && pkToStr ? ` с ${pkFromStr} по ${pkToStr}` : ''}.</p>
-    <p><b>4.2.</b> В случае невозможности качественного выполнения Исполнителем Работ в определенные в п. 4.1. Договора сроки, по причине неисполнения Заказчиком обязанностей, предусмотренных п.п. 2.4.2., п.п. 2.4.3. Договора, конечный срок выполнения Работ переносится на количество дней несоблюдения Заказчиком данных условий Договора.</p>
+    <p><b>4.1.</b> Сроки выполнения Работ по настоящему договору — не более 30 календарных дней с даты подписания Договора.</p>
 
     <div class="section-title">5. ПОРЯДОК СДАЧИ И ПРИЕМКИ РАБОТ</div>
-    <p><b>5.1.</b> По окончании выполнения Работ Исполнитель предоставляет Заказчику 2 (два) экземпляра УПД результатов выполненных Работ с приложением неотъемлемой документации.</p>
-    <p><b>5.2.</b> Заказчик в течение 5 (пяти) рабочих дней со дня фактической приемки результатов Работ обязан вернуть Исполнителю 1 (один) экземпляр надлежаще заверенного УПД или предъявить мотивированный отказ в письменной форме. Неподписание УПД и непредоставление мотивированного отказа признается выполнением Исполнителем в полном объеме Работ.</p>
+    <p><b>5.1.</b> По окончании выполнения Работ Исполнитель предоставляет Заказчику 2 (два) экземпляра УПД с приложением неотъемлемой документации.</p>
+    <p><b>5.2.</b> Заказчик в течение 5 (пяти) рабочих дней со дня фактической приемки результатов Работ обязан вернуть Исполнителю 1 (один) экземпляр надлежаще заверенного УПД или предъявить мотивированный отказ в письменной форме.</p>
 
-    <div class="section-title">6. ОТВЕТСТВЕННОСТЬ СТОРОН И ПОРЯДОК РАЗРЕШЕНИЯ СПОРОВ</div>
+    <div class="section-title">6. ОТВЕТСТВЕННОСТЬ СТОРОН</div>
     <p><b>6.1.</b> За неисполнение или ненадлежащее исполнение обязательств по настоящему договору Стороны несут ответственность в соответствии с действующим законодательством РФ.</p>
     <p><b>6.2.</b> Стороны обязуются обеспечить конфиденциальность сведений, касающихся предмета Договора.</p>
     <p><b>6.3.</b> Все споры разрешаются путём переговоров. Обязателен досудебный претензионный порядок. Срок ответа на претензию — 15 календарных дней.</p>
@@ -1255,7 +1467,7 @@ function generateContractHTML() {
 
     <div class="section-title">7. ПРОЧИЕ УСЛОВИЯ</div>
     <p><b>7.1.</b> Настоящий договор вступает в силу с момента его подписания.</p>
-    <p><b>7.2.</b> Любые изменения и дополнения действительны лишь в письменной форме, подписанные уполномоченными представителями Сторон.</p>
+    <p><b>7.2.</b> Любые изменения и дополнения действительны лишь в письменной форме.</p>
     <p><b>7.3.</b> Настоящий договор составлен в 2 (двух) экземплярах, имеющих одинаковую юридическую силу.</p>
 
     <div class="section-title">8. АДРЕСА И БАНКОВСКИЕ РЕКВИЗИТЫ СТОРОН</div>
@@ -1263,12 +1475,11 @@ function generateContractHTML() {
     ${signaturesHTML}
   </div>`;
   } else if (tpl.isTrudPk) {
-    // ===== НОВЫЙ ШАБЛОН: ПК от Труд Партнёр (ППК + ПК) =====
+    // ===== ПК + ППК ТРУД ПАРТНЁР =====
     const pkAddress = document.getElementById('pkAddress').value || clientAddress;
     const includeProgram = document.getElementById('pkIncludeProgram')?.checked;
     const includeMeasure = document.getElementById('pkIncludeMeasure')?.checked;
     const programPrice = parseFloat(document.getElementById('pkProgramPrice')?.value) || 0;
-    const totalQty = pkItems.reduce((s, it) => s + (parseFloat(it.qty) || 0), 0);
 
     const servicesList = [];
     if (includeProgram) servicesList.push('разработке Программы Производственного контроля на рабочих местах');
@@ -1283,6 +1494,20 @@ function generateContractHTML() {
     const totalStr = noVat
       ? `<b>${totalWithKop}</b>, НДС не облагается в соответствии с гл. 26.2 НК РФ.`
       : `<b>${totalWithKop}</b>, в том числе НДС ${ndsRate}% – ${totalNds.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} руб.`;
+
+    // Расчёт этапов оплаты для 3.3
+    let paymentStagesHTML = '';
+    if (paymentMethod === '100') {
+      paymentStagesHTML = `<p><b>3.3.</b> ${paymentClauseText(paymentMethod)}</p>`;
+    } else {
+      const [advance, final] = paymentMethod.split('/');
+      const advSum = (totalWithNds * advance / 100).toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      const finSum = (totalWithNds * final / 100).toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      paymentStagesHTML = `
+        <p><b>3.3.</b> Оплата Заказчиком услуг Исполнителя осуществляется в два этапа:</p>
+        <p class="no-indent">– ${advance}% стоимости услуг в размере ${advSum} руб. в течение 1 рабочего дня с даты подписания настоящего Договора;</p>
+        <p class="no-indent">– ${final}% стоимости услуг в размере ${finSum} руб. в течение 10 рабочих дней с даты подписания Заказчиком Акта оказания услуг.</p>`;
+    }
 
     mainPart = `
   <div>
@@ -1303,55 +1528,44 @@ function generateContractHTML() {
 
     <div class="section-title">2. ПРАВА И ОБЯЗАННОСТИ СТОРОН</div>
     <p><b>2.1. Исполнитель обязуется:</b></p>
-    <p><b>2.1.1.</b> Оказать Заказчику услуги согласно Спецификации (Приложение №1 к настоящему Договору «Перечень услуг»), предоставляемых Исполнителем ${exec.shortName} Заказчику ${clientShortWithOpf}.</p>
-    <p><b>2.1.2.</b> Услуги, оказываемые Исполнителем, должны быть оказаны в соответствии с требованиями законодательства, СанПиНов, ГОСТов и иных нормативно-правовых документов, действующих на территории РФ и условиям настоящего Договора.</p>
-    <p><b>2.1.3.</b> В течение 5 (Пяти) рабочих дней с даты окончания оказания услуг по настоящему Договору Исполнитель представляет Заказчику комплект документов (в соответствии с пунктом 2.1.1 настоящего Договора), а также подписанный Акт об оказанных услугах.</p>
+    <p><b>2.1.1.</b> Оказать Заказчику услуги согласно Спецификации (Приложение №1).</p>
+    <p><b>2.1.2.</b> Услуги должны быть оказаны в соответствии с требованиями законодательства, СанПиНов, ГОСТов и иных нормативно-правовых документов, действующих на территории РФ.</p>
+    <p><b>2.1.3.</b> В течение 5 (Пяти) рабочих дней с даты окончания оказания услуг Исполнитель представляет Заказчику комплект документов и подписанный Акт об оказанных услугах.</p>
     <p><b>2.1.4.</b> Оказать услуги с надлежащим качеством.</p>
     <p><b>2.1.5.</b> Оказать услуги в соответствии с установленным законодательством порядком проведения исследований, испытаний и выдачи протоколов установленного образца.</p>
-    <p><b>2.1.6.</b> При оказании услуг специалистам и представителям Исполнителя необходимо соблюдать режимные требования и пропускной режим, установленные на объектах учреждения Заказчика.</p>
-    <p><b>2.1.7.</b> Предоставлять по требованию Заказчика обоснования сделанных выводов по результатам Производственного контроля. Безвозмездно исправить по требованию Заказчика все выявленные недостатки, если в процессе оказания услуг Исполнитель допустил отступление от условий настоящего договора.</p>
-    <p><b>2.1.8.</b> Исполнитель несет ответственность за качество и объективность протоколов в соответствии с действующим законодательством Российской Федерации.</p>
-    <p><b>2.1.9.</b> Исполнитель обязуется приступить к оказанию услуг в течение 1 (одного) рабочего дня с момента подписания настоящего договора. Исполнитель не несет ответственности за нарушение сроков оказания услуг, в случае нарушения Заказчиком требований, предусмотренных п. 2.2.5. настоящего Договора.</p>
-    <p><b>2.1.10. Исполнитель имеет право:</b></p>
-    <p><b>2.1.10.1.</b> Посещать рабочие места Заказчика, подлежащие Производственному контролю, знакомиться с необходимой документацией и информацией.</p>
-    <p><b>2.1.10.2.</b> Отказаться от выполнения работ на отдельных рабочих местах в случае непредставления Заказчиком документации и информации, необходимой для выполнения работ, или не обеспечения Заказчиком доступа специалистов Исполнителя на рабочие места, подлежащие Производственному контролю.</p>
-    <p><b>2.1.11.</b> Срок оказания услуг Исполнителем по настоящему договору <b>7 (Семь) рабочих дней</b> с момента заключения Договора и оплаты Заказчиком счета на предоплату.</p>
+    <p><b>2.1.6.</b> Исполнитель несет ответственность за качество и объективность протоколов в соответствии с действующим законодательством Российской Федерации.</p>
+    <p><b>2.1.7.</b> Срок оказания услуг Исполнителем по настоящему договору <b>7 (Семь) рабочих дней</b> с момента заключения Договора и оплаты Заказчиком счета на предоплату.</p>
     <p><b>2.2. Заказчик обязуется:</b></p>
-    <p><b>2.2.1.</b> Предоставить в течение 1 (Одного) рабочего дня Исполнителю информацию и документы, необходимые для оказания услуг по настоящему Договору.</p>
-    <p><b>2.2.2.</b> По письменному (или устному) запросу Исполнителя разъяснять возникающие вопросы по сути и назначению документов.</p>
-    <p><b>2.2.3.</b> Немедленно ставить в известность Исполнителя обо всех изменениях в информации, материалах, документах, передаваемых Исполнителю.</p>
-    <p><b>2.2.4.</b> Своевременно и в полном объеме оплатить услуги Исполнителя в соответствии с п. 3.3 настоящего Договора.</p>
-    <p><b>2.2.5.</b> Обеспечить готовность объекта, наличие исследуемого материала на объекте и доступ Исполнителя на объект для отбора проб и проведения лабораторно-инструментальных исследований.</p>
-    <p><b>2.2.6.</b> В течение 5 (Пяти) рабочих дней после оказания услуг принять результат оказанных услуг Исполнителя и подписать Акт об оказанных услугах.</p>
-    <p><b>2.3.</b> Заказчик вправе любое время проверять ход и качество услуг, оказываемых Исполнителем, не вмешиваясь в его деятельность, в том числе запрашивать информацию о ходе и состоянии оказываемых услуг. При выявлении нарушений Заказчик вправе требовать от Исполнителя надлежащего и своевременного устранения выявленных недостатков.</p>
+    <p><b>2.2.1.</b> Предоставить в течение 1 (Одного) рабочего дня Исполнителю информацию и документы, необходимые для оказания услуг.</p>
+    <p><b>2.2.2.</b> Немедленно ставить в известность Исполнителя обо всех изменениях в информации, материалах, документах, передаваемых Исполнителю.</p>
+    <p><b>2.2.3.</b> Своевременно и в полном объеме оплатить услуги Исполнителя в соответствии с п. 3.3 настоящего Договора.</p>
+    <p><b>2.2.4.</b> Обеспечить готовность объекта, наличие исследуемого материала на объекте и доступ Исполнителя на объект.</p>
+    <p><b>2.2.5.</b> В течение 5 (Пяти) рабочих дней после оказания услуг принять результат оказанных услуг и подписать Акт об оказанных услугах.</p>
 
     <div class="section-title">3. СТОИМОСТЬ УСЛУГ И ПОРЯДОК РАСЧЕТОВ</div>
     <p><b>3.1.</b> Стоимость услуг Исполнителя по настоящему Договору составляет ${totalStr}</p>
     <p><b>3.2.</b> Цена Договора является твердой и определяется на весь срок исполнения Договора.</p>
-    <p><b>3.3.</b> Оплата Заказчиком услуг Исполнителя осуществляется в два этапа:</p>
-    <p class="no-indent">– 50% стоимости услуг в размере ${(totalWithNds / 2).toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} руб. в течение 1 рабочего дня с даты подписания настоящего Договора;</p>
-    <p class="no-indent">– 50% стоимости услуг в размере ${(totalWithNds / 2).toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} руб. в течение 10 рабочих дней с даты подписания Заказчиком Акта оказания услуг.</p>
-    <p><b>3.4.</b> Все расчеты по Договору производятся в безналичном порядке путем перечисления денежных средств на указанный Исполнителем расчетный счет. Обязательства Заказчика по оплате считаются исполненными на дату зачисления денежных средств на корреспондентский счет банка Исполнителя.</p>
+    ${paymentStagesHTML}
+    <p><b>3.4.</b> Все расчеты по Договору производятся в безналичном порядке путем перечисления денежных средств на указанный Исполнителем расчетный счет.</p>
 
     <div class="section-title">4. КОНФИДЕНЦИАЛЬНОСТЬ</div>
-    <p><b>4.1.</b> Исполнитель обязуется не раскрывать и не разглашать третьим лицам информацию о Заказчике, ставшую известной ему в связи с выполнением условий настоящего Договора, без предварительного письменного согласия на то Заказчика за исключением случаев, установленных законодательством РФ.</p>
-    <p><b>4.2.</b> Заказчик обязуется использовать информацию, полученную от Исполнителя в соответствии с условиями настоящего Договора, только для собственных нужд. Предоставление вышеуказанной информации третьим лицам возможно только с письменного согласия на то Исполнителя за исключением случаев, установленных законодательством РФ.</p>
+    <p><b>4.1.</b> Исполнитель обязуется не раскрывать и не разглашать третьим лицам информацию о Заказчике, ставшую известной ему в связи с выполнением условий настоящего Договора, без предварительного письменного согласия на то Заказчика.</p>
+    <p><b>4.2.</b> Заказчик обязуется использовать информацию, полученную от Исполнителя, только для собственных нужд.</p>
     <p><b>4.3.</b> Условия, установленные п. 4.1. и п. 4.2. настоящего Договора, действуют в течение срока действия и в течение 5 (Пяти) лет по окончании срока действия Договора.</p>
-    <p><b>4.4.</b> В случае, если Сторона, благодаря исполнению своего обязательства по настоящему Договору, получила от другой Стороны информацию о новых решениях и технических знаниях, в том числе не защищаемых законодательством РФ, а также сведения, которые могут рассматриваться как коммерческая тайна, Сторона, получившая такую информацию, не вправе сообщать третьим лицам без согласия другой Стороны.</p>
 
     <div class="section-title">5. ОТВЕТСТВЕННОСТЬ СТОРОН</div>
-    <p><b>5.1.</b> В случае неоплаты или неполной оплаты Заказчиком услуг в соответствии с п. 3.1. настоящего Договора Исполнитель имеет право приостановить оказание услуг до момента полной оплаты услуг.</p>
-    <p><b>5.2.</b> В случае нарушения пункта 3.3 настоящего Договора Исполнитель вправе потребовать у Заказчика оплаты пени в размере 0,3% от неуплаченной суммы настоящего Договора за каждый день просрочки.</p>
-    <p><b>5.3.</b> Стороны освобождаются от ответственности за частичное или полное неисполнение обязательств по настоящему Договору, если таковое явилось следствием обстоятельств непреодолимой силы, определяемых в соответствии с действующим законодательством.</p>
+    <p><b>5.1.</b> В случае неоплаты или неполной оплаты Заказчиком услуг Исполнитель имеет право приостановить оказание услуг до момента полной оплаты.</p>
+    <p><b>5.2.</b> В случае нарушения пункта 3.3 настоящего Договора Исполнитель вправе потребовать у Заказчика оплаты пени в размере 0,3% от неуплаченной суммы за каждый день просрочки.</p>
+    <p><b>5.3.</b> Стороны освобождаются от ответственности за частичное или полное неисполнение обязательств, если таковое явилось следствием обстоятельств непреодолимой силы.</p>
     <p><b>5.4.</b> Исполнитель не несет ответственности за последствия, связанные с несвоевременным предоставлением и/или недостоверным содержанием сведений в предоставленных документах Заказчика.</p>
-    <p><b>5.5.</b> В случае не предоставления Заказчиком подписанного Акта об оказанных услугах в течение 5 (Пяти) рабочих дней со дня оказания услуги и получения документов согласно п. 2.1.3. настоящего Договора либо мотивированного отказа от подписания Акта об оказанных услугах, услуга считается принятой в полном объеме и без замечаний.</p>
+    <p><b>5.5.</b> В случае непредоставления Заказчиком подписанного Акта об оказанных услугах в течение 5 (Пяти) рабочих дней, услуга считается принятой в полном объеме и без замечаний.</p>
 
     <div class="section-title">6. ПРОЧИЕ УСЛОВИЯ</div>
     <p><b>6.1.</b> Настоящий Договор вступает в силу с момента его заключения и действует до окончания исполнения Сторонами своих обязательств.</p>
-    <p><b>6.2.</b> В случае возникновения спора, вытекающего из условий настоящего Договора, для сторон обязателен претензионный порядок его разрешения. Срок для ответа на претензию — 5 (Пять) рабочих дней с момента её получения.</p>
-    <p><b>6.3.</b> В случае невозможности разрешения спора в претензионном порядке, спор выносится на рассмотрение в Арбитражный суд г. Санкт-Петербурга и Ленинградской области в соответствии с нормами действующего законодательства РФ.</p>
-    <p><b>6.4.</b> Любые изменения и дополнения к настоящему Договору действительны при условии, если они составлены в письменной форме и подписаны уполномоченными на то представителями Сторон.</p>
-    <p><b>6.5.</b> Настоящий Договор составлен в двух экземплярах, имеющих равную юридическую силу, по одному экземпляру для каждой из Сторон.</p>
+    <p><b>6.2.</b> В случае возникновения спора обязателен претензионный порядок. Срок для ответа на претензию — 5 (Пять) рабочих дней с момента её получения.</p>
+    <p><b>6.3.</b> Спор выносится на рассмотрение в Арбитражный суд г. Санкт-Петербурга и Ленинградской области.</p>
+    <p><b>6.4.</b> Любые изменения и дополнения к настоящему Договору действительны в письменной форме.</p>
+    <p><b>6.5.</b> Настоящий Договор составлен в двух экземплярах, имеющих равную юридическую силу.</p>
     <p><b>6.6.</b> Во всем остальном, что не предусмотрено настоящим Договором, Стороны руководствуются действующим законодательством РФ.</p>
 
     <div class="section-title">7. ПРИЛОЖЕНИЯ</div>
@@ -1386,19 +1600,18 @@ function generateContractHTML() {
     <div class="section-title">1. ПРЕДМЕТ ДОГОВОРА</div>
     <p><b>1.1.</b> Заказчик поручает, а ИСПОЛНИТЕЛЬ принимает на себя обязательство по проведению ${tpl.subjectGenitive} ${workplaces} (${workplacesWordsGenitive}) ${workplacesDecl}, в объеме, определенном:</p>
     <ul>${lawRefsList}</ul>
-    <p><b>1.2.</b> Если при проведении ${tpl.subjectGenitive} выяснится необходимость корректировки числа оцениваемых рабочих мест, а именно, увеличения или уменьшения количества рабочих мест и, соответственно, изменения стоимости оказываемых услуг, составляется дополнительное соглашение.</p>
+    <p><b>1.2.</b> Если при проведении ${tpl.subjectGenitive} выяснится необходимость корректировки числа оцениваемых рабочих мест, составляется дополнительное соглашение.</p>
     <p><b>1.3.</b> ИСПОЛНИТЕЛЬ гарантирует Заказчику свое соответствие требованиям, установленным действующим законодательством РФ.</p>
 
     <div class="section-title">2. СТОИМОСТЬ УСЛУГ И ПОРЯДОК РАСЧЕТОВ</div>
     ${section2HTML}
 
     <div class="section-title">3. ОБЯЗАННОСТИ СТОРОН</div>
-    <p><b>3.1.</b> Заказчик обязуется в течение 10 (Десяти) рабочих дней с момента подписания Договора предоставить ИСПОЛНИТЕЛЮ исходные данные и сведения, необходимые для оказания услуг по настоящему Договору.</p>
-    <p><b>3.2.</b> Заказчик обязуется обеспечить ИСПОЛНИТЕЛЮ доступ на территорию объекта с целью оказания услуг по п. 1.1 Договора.</p>
-    <p><b>3.3.</b> Заказчик обязуется утвердить перечень рабочих мест, в отношении которых проведена идентификация потенциально вредных и (или) опасных производственных факторов на рабочих местах.</p>
-    <p><b>3.4.</b> Заказчик несет ответственность за своевременность предоставления, полноту и достоверность исходных данных, необходимых ИСПОЛНИТЕЛЮ для оказания услуг.</p>
-    <p><b>3.5.</b> Заказчик обязуется оплатить услуги в соответствии с разделом 2 настоящего Договора.</p>
-    <p><b>3.6.</b> ИСПОЛНИТЕЛЬ обязуется оказать услуги по п. 1.1 настоящего Договора в составе:</p>
+    <p><b>3.1.</b> Заказчик обязуется в течение 10 (Десяти) рабочих дней с момента подписания Договора предоставить ИСПОЛНИТЕЛЮ исходные данные и сведения, необходимые для оказания услуг.</p>
+    <p><b>3.2.</b> Заказчик обязуется обеспечить ИСПОЛНИТЕЛЮ доступ на территорию объекта.</p>
+    <p><b>3.3.</b> Заказчик обязуется утвердить перечень рабочих мест, в отношении которых проведена идентификация потенциально вредных и (или) опасных производственных факторов.</p>
+    <p><b>3.4.</b> Заказчик обязуется оплатить услуги в соответствии с разделом 2 настоящего Договора.</p>
+    <p><b>3.5.</b> ИСПОЛНИТЕЛЬ обязуется оказать услуги по п. 1.1 настоящего Договора в составе:</p>
     <ul>
       <li>идентификация потенциально вредных и (или) опасных факторов производственной среды и трудового процесса;</li>
       <li>исследования (испытания) и измерения вредных и (или) опасных производственных факторов;</li>
@@ -1408,40 +1621,37 @@ function generateContractHTML() {
 
     <div class="section-title">4. СРОК ДЕЙСТВИЯ ДОГОВОРА И ОКАЗАНИЯ УСЛУГ</div>
     <p><b>4.1.</b> Настоящий Договор вступает в силу с даты его подписания лицами, уполномоченными Сторонами и завершается по выполнении взаимных обязательств.</p>
-    <p><b>4.2.</b> Срок оказания услуг ИСПОЛНИТЕЛЕМ по Договору — не более 30 (тридцати) рабочих дней с момента выполнения Заказчиком обязательств по п. 3.1. настоящего Договора.</p>
-    <p><b>4.3.</b> ИСПОЛНИТЕЛЬ оставляет за собой право досрочного оказания услуг по настоящему Договору.</p>
+    <p><b>4.2.</b> Срок оказания услуг ИСПОЛНИТЕЛЕМ по Договору — не более 30 (тридцати) рабочих дней с момента выполнения Заказчиком обязательств по п. 3.1.</p>
+    <p><b>4.3.</b> ИСПОЛНИТЕЛЬ оставляет за собой право досрочного оказания услуг.</p>
 
     <div class="section-title">5. ПОРЯДОК СДАЧИ И ПРИЕМКИ УСЛУГ</div>
     <p><b>5.1.</b> ${tpl.resultText}</p>
-    <p><b>5.2.</b> Приемка услуг по настоящему Договору оформляется двухсторонним универсальным передаточным документом (УПД), в течение 5 (пяти) рабочих дней с даты получения Заказчиком материалов от ИСПОЛНИТЕЛЯ.</p>
-    <p><b>5.3.</b> При неполучении от Заказчика подписанного УПД или мотивированного отказа от их приемки в установленный срок, ИСПОЛНИТЕЛЬ составляет односторонний УПД.</p>
-    <p><b>5.4.</b> Дата подписания УПД считается датой 100% выполнения ИСПОЛНИТЕЛЕМ своих обязательств по настоящему Договору.</p>
+    <p><b>5.2.</b> Приемка услуг оформляется двухсторонним УПД в течение 5 (пяти) рабочих дней с даты получения Заказчиком материалов.</p>
+    <p><b>5.3.</b> При неполучении от Заказчика подписанного УПД или мотивированного отказа в установленный срок, ИСПОЛНИТЕЛЬ составляет односторонний УПД.</p>
+    <p><b>5.4.</b> Дата подписания УПД считается датой 100% выполнения ИСПОЛНИТЕЛЕМ своих обязательств.</p>
 
     <div class="section-title">6. ОТВЕТСТВЕННОСТЬ СТОРОН</div>
-    <p><b>6.1.</b> За невыполнение или ненадлежащее выполнение обязательств по настоящему Договору Стороны несут ответственность в соответствии с условиями настоящего Договора, а в случаях, не предусмотренных им, в соответствии с действующим законодательством Российской Федерации.</p>
+    <p><b>6.1.</b> За невыполнение или ненадлежащее выполнение обязательств по настоящему Договору Стороны несут ответственность в соответствии с условиями настоящего Договора.</p>
     <p><b>6.2.</b> За нарушение работодателем требований действующего законодательства в части порядка и правил проведения ${tpl.subjectGenitive}, ответственность возлагается на Заказчика.</p>
     <p><b>6.3.</b> Стороны гарантируют полное соблюдение всех условий обработки, хранения и использования полученных персональных данных, в соответствии с Федеральным Законом «О персональных данных» от 27.07.2006 № 152-ФЗ.</p>
-    <p><b>6.4.</b> За нарушение сроков оказания услуг Исполнителем Заказчик вправе потребовать от Исполнителя уплаты штрафной неустойки (пени) в размере 0,1% от стоимости несвоевременно оказанных услуг за каждый день просрочки.</p>
+    <p><b>6.4.</b> За нарушение сроков оказания услуг Исполнителем Заказчик вправе потребовать уплаты неустойки в размере 0,1% от стоимости несвоевременно оказанных услуг за каждый день просрочки.</p>
 
     <div class="section-title">7. РАСТОРЖЕНИЕ ДОГОВОРА</div>
-    <p><b>7.1.</b> В случае задержки или отказа Заказчика предоставить необходимую для оказания услуг информацию, ИСПОЛНИТЕЛЬ имеет право на увеличение сроков оказания услуг по настоящему Договору на аналогичное количество дней, либо требовать расторжения Договора в случае, если Заказчик задерживает предоставление необходимой для оказания услуг информации более чем на 10 рабочих дней.</p>
-    <p><b>7.2.</b> В случае расторжения Договора, Заказчик оплачивает стоимость фактически оказанных и документально подтвержденных услуг ИСПОЛНИТЕЛЯ по настоящему Договору, за исключением случаев расторжения Договора по основаниям, указанным в п. 7.3 Договора.</p>
+    <p><b>7.1.</b> В случае задержки или отказа Заказчика предоставить необходимую информацию, ИСПОЛНИТЕЛЬ имеет право на увеличение сроков оказания услуг.</p>
+    <p><b>7.2.</b> В случае расторжения Договора, Заказчик оплачивает стоимость фактически оказанных и документально подтвержденных услуг.</p>
     <p><b>7.3.</b> Договор расторгается, если государственными органами принимаются акты, лишающие права ИСПОЛНИТЕЛЯ на оказание услуг.</p>
 
     <div class="section-title">8. АРБИТРАЖ</div>
-    <p><b>8.1.</b> Все споры, которые могут возникнуть из настоящего Договора или в связи с его исполнением и которые не удалось решить путем переговоров, подлежат разрешению в Арбитражном Суде города Санкт-Петербурга и Ленинградской области. Претензионный порядок обязателен. Срок ответа на претензию 15 рабочих дней с момента ее получения.</p>
+    <p><b>8.1.</b> Все споры подлежат разрешению в Арбитражном Суде города Санкт-Петербурга и Ленинградской области. Претензионный порядок обязателен. Срок ответа на претензию 15 рабочих дней.</p>
 
     <div class="section-title">9. ПРОЧИЕ УСЛОВИЯ</div>
-    <p><b>9.1.</b> Заказчик не вправе уклоняться от рассмотрения представленных ИСПОЛНИТЕЛЕМ материалов.</p>
-    <p><b>9.2.</b> Все исправления и дополнения к настоящему Договору будут действительны только в том случае, если они выполнены в письменной форме и подписаны лицами, уполномоченными на то Сторонами.</p>
-    <p><b>9.3.</b> Стороны признают равную юридическую силу собственноручной подписи и факсимиле подписи в материалах.</p>
-    <p><b>9.4.</b> После получения Заказчиком материалов, при необходимости их корректировки, не связанной с ненадлежащим оказанием ИСПОЛНИТЕЛЕМ услуг, составляется дополнительное соглашение.</p>
-    <p><b>9.5.</b> Настоящий Договор составлен в 2 (двух) идентичных экземплярах, имеющих одинаковую юридическую силу, по одному экземпляру для каждой Стороны.</p>
+    <p><b>9.1.</b> Все исправления и дополнения к настоящему Договору действительны только в письменной форме.</p>
+    <p><b>9.2.</b> Стороны признают равную юридическую силу собственноручной подписи и факсимиле подписи в материалах.</p>
+    <p><b>9.3.</b> Настоящий Договор составлен в 2 (двух) идентичных экземплярах, имеющих одинаковую юридическую силу.</p>
 
     <div class="section-title">10. ФОРС-МАЖОР</div>
-    <p><b>10.1.</b> Стороны освобождаются от ответственности за неисполнение или ненадлежащее исполнение обязательств по настоящему договору, если это явилось следствием обстоятельств непреодолимой силы.</p>
-    <p><b>10.2.</b> Документ, выданный соответствующим компетентным органом, является достаточным подтверждением наличия и продолжительности действия обстоятельств непреодолимой силы.</p>
-    <p><b>10.3.</b> Сторона, ссылающаяся на обстоятельства непреодолимой силы, обязана незамедлительно информировать другую сторону о наступлении подобных обстоятельств в письменной форме.</p>
+    <p><b>10.1.</b> Стороны освобождаются от ответственности за неисполнение обязательств, если это явилось следствием обстоятельств непреодолимой силы.</p>
+    <p><b>10.2.</b> Документ, выданный компетентным органом, является достаточным подтверждением наличия обстоятельств непреодолимой силы.</p>
 
     <div class="section-title">11. ЮРИДИЧЕСКИЕ АДРЕСА И РЕКВИЗИТЫ СТОРОН</div>
     ${requisitesHTML}
@@ -1449,11 +1659,13 @@ function generateContractHTML() {
   </div>`;
   }
 
-  // === ПРИЛОЖЕНИЕ ===
+  // Приложение
   const factAddressForAppendix = clientFactAddress || clientAddress;
   let appendixAddressLine;
   if (isIP) {
     appendixAddressLine = `<p class="no-indent" style="text-align:center;">По адресу: ${factAddressForAppendix}</p>`;
+  } else if (tpl.isLab) {
+    appendixAddressLine = `<p class="no-indent" style="text-align:center;">По адресу: ${document.getElementById('labAddress').value || clientAddress}</p>`;
   } else if (tpl.isPk) {
     appendixAddressLine = `<p class="no-indent" style="text-align:center;">По адресу: ${document.getElementById('pkAddress').value || clientAddress}</p>`;
   } else {
@@ -1482,7 +1694,7 @@ function generateContractHTML() {
 }
 
 // =============================================
-// 11. ОБНОВЛЕНИЕ ПРЕВЬЮ
+// 13. ОБНОВЛЕНИЕ ПРЕВЬЮ
 // =============================================
 function updatePreview() {
   const isIP = detectIP();
@@ -1494,42 +1706,53 @@ function updatePreview() {
   const factAddressField = document.getElementById('factAddressField');
   if (factAddressField) factAddressField.style.display = isIP ? 'block' : 'none';
 
-  // НДС-поле скрываем для исполнителей без НДС
+  const tplKey = document.getElementById('templateType').value || 'sout';
+  const tpl = templates[tplKey];
+  const noVat = isNoVatForTemplate(tplKey);
+
   const ndsRateField = document.getElementById('ndsRateField');
   const ndsLine = document.getElementById('ndsLine');
   const totalWithoutNdsLabel = document.getElementById('totalWithoutNdsLabel');
-  if (ndsRateField) ndsRateField.style.display = exec.noVat ? 'none' : 'block';
-  if (ndsLine) ndsLine.style.display = exec.noVat ? 'none' : 'flex';
-  if (totalWithoutNdsLabel) totalWithoutNdsLabel.textContent = exec.noVat ? 'Итого:' : 'Без НДС:';
+  if (ndsRateField) ndsRateField.style.display = noVat ? 'none' : 'block';
+  if (ndsLine) ndsLine.style.display = noVat ? 'none' : 'flex';
+  if (totalWithoutNdsLabel) totalWithoutNdsLabel.textContent = noVat ? 'Итого:' : 'Без НДС:';
+
+  // Показ кастомных полей оплаты
+  const customPaymentFields = document.getElementById('customPaymentFields');
+  if (customPaymentFields) {
+    customPaymentFields.style.display = document.getElementById('paymentMethod').value === 'custom' ? 'grid' : 'none';
+  }
 
   document.getElementById('contractPreview').innerHTML = generateContractHTML();
   const footer = document.getElementById('footerContractNumber');
   if (footer) footer.textContent = document.getElementById('contractNumber').value || '—';
 
-  const tplKey = document.getElementById('templateType').value || 'sout';
-  const tpl = templates[tplKey];
-
   const blockSimple = document.getElementById('blockSimple');
   const blockPk = document.getElementById('blockPk');
+  const blockLab = document.getElementById('blockLab');
   const blockPkTrudOptions = document.getElementById('blockPkTrudOptions');
-  if (tpl.isPk) {
-    blockSimple.style.display = 'none';
+
+  // Сброс
+  blockSimple.style.display = 'none';
+  blockPk.style.display = 'none';
+  blockLab.style.display = 'none';
+  if (blockPkTrudOptions) blockPkTrudOptions.style.display = 'none';
+
+  if (tpl.isLab) {
+    blockLab.style.display = 'block';
+  } else if (tpl.isPk) {
     blockPk.style.display = 'block';
     if (blockPkTrudOptions) blockPkTrudOptions.style.display = tpl.isTrudPk ? 'block' : 'none';
   } else {
     blockSimple.style.display = 'block';
-    blockPk.style.display = 'none';
-    if (blockPkTrudOptions) blockPkTrudOptions.style.display = 'none';
   }
 
-  // Скрываем поле цены ППК, если галочка снята
   const pkProgramPriceField = document.getElementById('pkProgramPriceField');
   const pkIncludeProgramEl = document.getElementById('pkIncludeProgram');
   if (pkProgramPriceField && pkIncludeProgramEl) {
     pkProgramPriceField.style.display = pkIncludeProgramEl.checked ? 'block' : 'none';
   }
 
-  // Отображение разбивки для ПК Труд Партнёр
   const pkProgramLine = document.getElementById('pkProgramLine');
   const pkMeasureLine = document.getElementById('pkMeasureLine');
   const pkProgramSumEl = document.getElementById('pkProgramSum');
@@ -1539,7 +1762,6 @@ function updatePreview() {
     const includeMeasure = document.getElementById('pkIncludeMeasure')?.checked;
     const programPrice = parseFloat(document.getElementById('pkProgramPrice')?.value) || 0;
     const measureSum = pkItems.reduce((s, it) => s + ((parseFloat(it.qty) || 0) * (parseFloat(it.price) || 0)), 0);
-
     if (pkProgramLine) {
       pkProgramLine.style.display = includeProgram ? 'flex' : 'none';
       if (pkProgramSumEl) pkProgramSumEl.textContent = programPrice.toLocaleString('ru-RU') + ' ₽';
@@ -1553,29 +1775,31 @@ function updatePreview() {
     if (pkMeasureLine) pkMeasureLine.style.display = 'none';
   }
 
-  document.getElementById('labelWorkplaces').textContent = tpl.measureLabel;
+  document.getElementById('labelWorkplaces').textContent = tpl.measureLabel || 'Кол-во';
 }
 
 // =============================================
-// 12. ПЕРЕСТРОЙКА СПИСКА ТИПОВ ДОГОВОРА ПРИ СМЕНЕ ИСПОЛНИТЕЛЯ
+// 14. ПЕРЕСТРОЙКА СПИСКА ШАБЛОНОВ
 // =============================================
 function rebuildTemplateOptions() {
   const execSel = document.getElementById('executorType');
   currentExecutorId = execSel.value;
   const allowed = templatesByExecutor[currentExecutorId] || [];
   const tplSel = document.getElementById('templateType');
+  const prev = tplSel.value;
   tplSel.innerHTML = allowed.map(key => {
     const t = templates[key];
     return `<option value="${key}">${t.label}</option>`;
   }).join('');
+  if (allowed.includes(prev)) tplSel.value = prev;
   updatePreview();
 }
 
 // =============================================
-// 13. КОПИРОВАНИЕ ДАННЫХ ДЛЯ РЕЕСТРА
+// 15. КОПИРОВАНИЕ ДЛЯ РЕЕСТРА
 // =============================================
 function copyForRegistry() {
-  const { totalWithNds, qty, tpl, exec } = getTotals();
+  const { qty, tpl, exec } = getTotals();
   const isIP = detectIP();
 
   const clientOpfShort = document.getElementById('clientOpfShort').value || '';
@@ -1602,24 +1826,13 @@ function copyForRegistry() {
     dateStr = `${d}.${m}.${y}`;
   }
 
-  const row = [
-    exec.shortName,
-    nameFull,
-    workType,
-    inn,
-    kpp,
-    number,
-    dateStr,
-    qty
-  ].join('\t');
+  const row = [exec.shortName, nameFull, workType, inn, kpp, number, dateStr, qty].join('\t');
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(row).then(() => {
-      alert('✅ Строка скопирована в буфер обмена.\n\nВставьте её в Excel через Ctrl+V — данные разложатся по столбцам.');
+      alert('✅ Строка скопирована в буфер обмена.');
     }).catch(() => fallbackCopy(row));
-  } else {
-    fallbackCopy(row);
-  }
+  } else fallbackCopy(row);
 }
 
 function fallbackCopy(text) {
@@ -1631,15 +1844,15 @@ function fallbackCopy(text) {
   ta.select();
   try {
     document.execCommand('copy');
-    alert('✅ Строка скопирована в буфер обмена.\n\nВставьте её в Excel через Ctrl+V.');
+    alert('✅ Строка скопирована.');
   } catch (err) {
-    alert('❌ Не удалось скопировать автоматически.\n\nСкопируйте вручную:\n\n' + text);
+    alert('❌ Не удалось скопировать автоматически:\n\n' + text);
   }
   document.body.removeChild(ta);
 }
 
 // =============================================
-// 14. ЗАГРУЗКА ПО ИНН
+// 16. ЗАГРУЗКА ПО ИНН
 // =============================================
 const DADATA_API_KEY = 'f94f4386b5ec6bc654487fc994c0fba0fdad788c';
 
@@ -1652,12 +1865,7 @@ document.getElementById('loadInnBtn').addEventListener('click', function() {
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Token ' + DADATA_API_KEY },
     body: JSON.stringify({ query: inn, count: 1 })
   })
-  .then(r => {
-    if (r.status === 403) throw new Error('❌ Неверный API-ключ');
-    if (r.status === 429) throw new Error('❌ Превышен лимит');
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
-  })
+  .then(r => r.json())
   .then(data => {
     if (data.suggestions && data.suggestions.length > 0) {
       const org = data.suggestions[0].data;
@@ -1675,21 +1883,19 @@ document.getElementById('loadInnBtn').addEventListener('click', function() {
       let director = '';
       if (org.management) director = (org.management.post || '') + ' ' + (org.management.name || '');
       document.getElementById('clientDirector').value = director.trim() || 'Генеральный директор Иванов Иван Иванович';
-
       const isIPLoaded = /индивидуальный предприниматель/i.test(opf.full || '') || /^ИП/i.test(opf.short || '');
       const factField = document.getElementById('clientFactAddress');
       if (factField && isIPLoaded) factField.value = addr;
-
       updatePreview();
       alert('✅ Данные загружены!');
-    } else { alert('❌ Организация не найдена'); }
+    } else alert('❌ Организация не найдена');
   })
   .catch(e => alert(e.message))
   .finally(() => { this.disabled = false; this.textContent = 'Загрузить'; });
 });
 
 // =============================================
-// 15. ПОИСК БАНКА
+// 17. ПОИСК БАНКА
 // =============================================
 document.getElementById('loadBankBtn').addEventListener('click', function() {
   const query = document.getElementById('bankSearch').value.trim();
@@ -1710,14 +1916,14 @@ document.getElementById('loadBankBtn').addEventListener('click', function() {
       document.getElementById('clientKs').value = '301018' + (bank.bic ? bank.bic.slice(0, 5) : '') + '0000000';
       updatePreview();
       alert('✅ Банк найден!');
-    } else { alert('❌ Банк не найден'); }
+    } else alert('❌ Банк не найден');
   })
   .catch(e => alert(e.message))
   .finally(() => { this.disabled = false; this.textContent = 'Найти'; });
 });
 
 // =============================================
-// 16. ЭКСПОРТ В WORD
+// 18. ЭКСПОРТ В WORD
 // =============================================
 function exportToWord() {
   const isIP = detectIP();
@@ -1737,7 +1943,7 @@ function exportToWord() {
     shortName = clientOpfShort ? `${clientOpfShort}_${cleanName}` : cleanName;
   }
 
-  const number = document.getElementById('contractNumber').value || 'П-0000/СОУТ';
+  const number = document.getElementById('contractNumber').value || 'П-0000';
   const cleanNumber = number.replace(/[\/\s]/g, '');
   const tplShort = tpl.label.replace(/\s+/g, '_');
   const fileName = `${exec.prefix}_${tplShort}_${shortName}_${cleanNumber}.doc`;
@@ -1777,7 +1983,7 @@ function exportToWord() {
 }
 
 // =============================================
-// 17. ИНИЦИАЛИЗАЦИЯ
+// 19. ИНИЦИАЛИЗАЦИЯ
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
   const today = new Date().toISOString().split('T')[0];
@@ -1797,7 +2003,19 @@ document.addEventListener('DOMContentLoaded', function() {
   ];
   renderPkRows();
 
+  renderLabRows();
+  renderLabExtras();
+
+  // Автогенерация номера договора
+  document.getElementById('contractNumber').value = generateContractNumber();
+  document.getElementById('genNumberBtn').addEventListener('click', function() {
+    document.getElementById('contractNumber').value = generateContractNumber();
+    updatePreview();
+  });
+
   document.getElementById('executorType').addEventListener('change', rebuildTemplateOptions);
+  document.getElementById('templateType').addEventListener('change', updatePreview);
+  document.getElementById('paymentMethod').addEventListener('change', updatePreview);
 
   document.querySelectorAll('input, select').forEach(inp => {
     inp.addEventListener('input', updatePreview);
@@ -1805,14 +2023,16 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   document.getElementById('addPkRowBtn').addEventListener('click', addPkRow);
+  document.getElementById('addLabRowBtn').addEventListener('click', addLabRow);
+  document.getElementById('addLabExtraBtn').addEventListener('click', addLabExtraRow);
   document.getElementById('updateBtn').addEventListener('click', updatePreview);
   document.getElementById('updateBtn2').addEventListener('click', updatePreview);
   document.getElementById('printBtn').addEventListener('click', () => window.print());
   document.getElementById('printBtn2').addEventListener('click', () => window.print());
   document.getElementById('wordBtn').addEventListener('click', exportToWord);
   document.getElementById('wordBtn2').addEventListener('click', () => exportToWord());
-  document.getElementById('copyRegistryBtn').addEventListener('click', copyForRegistry);
-  document.getElementById('copyRegistryBtnTop').addEventListener('click', copyForRegistry);
+  document.getElementById('copyRegistryBtn').addEventListener('click', copyRegistry);
+  document.getElementById('copyRegistryBtnTop').addEventListener('click', copyRegistry);
 
   rebuildTemplateOptions();
   updatePreview();
