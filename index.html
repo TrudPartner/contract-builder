@@ -83,7 +83,6 @@
   .contract-preview .appendix-block { margin-top: 30px; page-break-inside: avoid; break-inside: avoid; }
   .print-footer { display: none; }
 
-  /* Блок ПК-параметров */
   .pk-block { background: #f0f7fe; border-radius: 12px; padding: 12px 14px; margin: 10px 0; border: 1px solid #c8e0f5; }
   .pk-block .pk-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .pk-block .pk-header b { color: #003366; font-size: 13px; }
@@ -95,7 +94,6 @@
   .pk-total { text-align: right; font-size: 13px; color: #003366; margin-top: 6px; padding-top: 6px; border-top: 1px solid #c8e0f5; }
   .pk-total b { font-size: 14px; }
 
-  /* Блок лабораторного контроля */
   .lab-row { display: grid; grid-template-columns: 1fr 55px 55px 65px 30px; gap: 5px; margin-bottom: 5px; align-items: center; }
   .lab-row input { padding: 5px 7px; font-size: 12.5px; border: 1px solid #d0dcec; border-radius: 6px; font-family: inherit; width: 100%; }
   .lab-row input:focus { border-color: #2b7bb6; outline: none; }
@@ -103,6 +101,7 @@
   .lab-row .lab-del:hover { background: #992d22; }
   .lab-head { display: grid; grid-template-columns: 1fr 55px 55px 65px 30px; gap: 5px; font-size: 11px; color: #4a6f8f; font-weight: 600; padding: 0 0 4px 0; }
   .lab-extra-row { display: grid; grid-template-columns: 1fr 55px 65px 30px; gap: 5px; margin-bottom: 5px; align-items: center; }
+  .lab-extra-head { display: grid; grid-template-columns: 1fr 55px 65px 30px; gap: 5px; font-size: 11px; color: #4a6f8f; font-weight: 600; padding: 0 0 4px 0; }
 
   @media print {
     body { background: #fff; padding: 0; margin: 0; }
@@ -142,6 +141,7 @@
     .contract-preview .sig-table td { display: block; width: 100%; padding: 0 !important; margin-bottom: 20px; }
     .pk-row { grid-template-columns: 1fr 55px 65px 28px; }
     .lab-row, .lab-head { grid-template-columns: 1fr 45px 45px 55px 28px; }
+    .lab-extra-row, .lab-extra-head { grid-template-columns: 1fr 45px 55px 28px; }
   }
 </style>
 </head>
@@ -182,7 +182,7 @@
           <label>Номер договора</label>
           <div style="display:flex; gap:8px;">
             <input type="text" id="contractNumber" style="flex:1;" />
-            <button type="button" class="btn btn-primary" id="genNumberBtn" style="padding: 6px 14px; font-size: 13px; white-space: nowrap;" title="Сгенерировать новый номер">🎲</button>
+            <button type="button" class="btn btn-primary" id="genNumberBtn" style="padding: 6px 14px; font-size: 13px; white-space: nowrap;" title="Сгенерировать">🎲</button>
           </div>
         </div>
         <div class="field">
@@ -263,7 +263,6 @@
           <div class="field"><label>Дата окончания работ</label><input type="date" id="pkDateTo" /></div>
         </div>
 
-        <!-- Блок опций ПК для Труд Партнёр -->
         <div id="blockPkTrudOptions" style="display:none; background:#fff8e6; border-radius:8px; padding:10px 12px; border:1px solid #ffe0a3; margin-bottom:10px;">
           <label style="color:#8a5a00; font-weight:700; font-size:12.5px;">⚙️ Состав работ</label>
 
@@ -293,7 +292,7 @@
         </div>
       </div>
 
-      <!-- Блок для ЛАБОРАТОРНОГО КОНТРОЛЯ -->
+      <!-- Блок для ПРОИЗВОДСТВЕННОГО КОНТРОЛЯ -->
       <div id="blockLab" style="display:none;">
         <div class="field">
           <label>Адрес объекта проведения работ</label>
@@ -322,6 +321,12 @@
           <div class="pk-header">
             <b>➕ Дополнительные услуги</b>
             <button class="btn btn-add btn-mini" id="addLabExtraBtn" type="button">➕ Добавить</button>
+          </div>
+          <div class="lab-extra-head">
+            <span>Наименование</span>
+            <span>Кол-во</span>
+            <span>Цена</span>
+            <span></span>
           </div>
           <div id="labExtraContainer"></div>
           <div class="pk-total">
@@ -446,15 +451,55 @@ const PK_PARAMS = [
 ];
 
 // =============================================
-// 3. ГЕНЕРАТОР НОМЕРА ДОГОВОРА
+// 3. ГЕНЕРАЦИЯ НОМЕРА
 // =============================================
-function generateContractNumber() {
+// Для Труд Партнёр: XXXX (случайно, 1000-9999) + ДДММГГ из поля "Дата договора"
+function generateTrudNumber() {
   const num = Math.floor(1000 + Math.random() * 9000);
-  const now = new Date();
-  const dd = String(now.getDate()).padStart(2, '0');
-  const mm = String(now.getMonth() + 1).padStart(2, '0');
-  const yy = String(now.getFullYear()).slice(-2);
-  return `${num}-${dd}.${mm}.${yy}`;
+  const dateVal = document.getElementById('contractDate').value;
+  let dd = '01', mm = '01', yy = '26';
+  if (dateVal) {
+    const [y, m, d] = dateVal.split('-');
+    dd = d; mm = m; yy = String(y).slice(-2);
+  } else {
+    const now = new Date();
+    dd = String(now.getDate()).padStart(2, '0');
+    mm = String(now.getMonth() + 1).padStart(2, '0');
+    yy = String(now.getFullYear()).slice(-2);
+  }
+  return `${num}${dd}${mm}${yy}`;
+}
+
+// Для ЭкоЛаб: П-XXXX/<суффикс>
+const EKOLAB_NUMBER_PREFIXES = {
+  sout: 'СОУТ',
+  risks: 'Риски',
+  pk: 'ПК',
+  lab: 'ПК'
+};
+
+let ekolabSeq = 1056;
+
+function generateEkolabNumber(tplKey, seq) {
+  const suffix = EKOLAB_NUMBER_PREFIXES[tplKey] || 'СОУТ';
+  const n = seq || ekolabSeq;
+  return `П-${n}/${suffix}`;
+}
+
+function refreshContractNumber() {
+  const exec = currentExecutor();
+  const tplKey = document.getElementById('templateType').value;
+  const numberEl = document.getElementById('contractNumber');
+  const genBtn = document.getElementById('genNumberBtn');
+
+  if (exec.id === 'trudpartner') {
+    numberEl.value = generateTrudNumber();
+    if (genBtn) { genBtn.style.display = 'inline-block'; genBtn.textContent = '🎲'; genBtn.title = 'Сгенерировать новый номер'; }
+  } else {
+    numberEl.value = generateEkolabNumber(tplKey, ekolabSeq);
+    if (genBtn) { genBtn.style.display = 'inline-block'; genBtn.textContent = '➕'; genBtn.title = 'Увеличить номер на 1'; }
+  }
+  updatePreview();
 }
 
 // =============================================
@@ -765,7 +810,7 @@ const templates = {
     appendixTitle: 'СПЕЦИФИКАЦИЯ:'
   },
   pk: {
-    executorId: 'ecolab', label: 'ПК (ЭкоЛаб)', workType: 'ПК',
+    executorId: 'ecolab', label: 'ПК (замеры)', workType: 'ПК',
     subjectGenitive: 'производственного контроля за условиями труда',
     subjectHeader: 'на выполнение работ по производственному контролю за условиями труда',
     specName: 'Производственный контроль', specUnit: 'точка',
@@ -794,34 +839,32 @@ const templates = {
     ],
     appendixTitle: 'СПЕЦИФИКАЦИЯ'
   },
-  // ===== ЛАБОРАТОРНЫЙ КОНТРОЛЬ =====
+  // ===== ПРОИЗВОДСТВЕННЫЙ КОНТРОЛЬ =====
   lab: {
-    label: 'Лабораторный контроль',
-    workType: 'ЛАБ. КОНТРОЛЬ',
-    subjectGenitive: 'лабораторного контроля вредных и опасных производственных факторов',
-    subjectHeader: 'на оказание услуг по лабораторному контролю',
-    specName: 'Лабораторный контроль', specUnit: 'замер',
+    label: 'Производственный контроль',
+    workType: 'ПК',
+    subjectGenitive: 'производственного контроля',
+    subjectHeader: 'на оказание услуг по производственному контролю',
+    specName: 'Производственный контроль', specUnit: 'замер',
     measureLabel: 'Кол-во замеров',
     isLab: true,
-    resultText: 'Результатом оказанных услуг являются Протоколы измерений опасных и вредных производственных факторов.',
-    specTotalNote: (t, n, noVat) => noVat ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ (УСН)' : `, в т.ч. НДС ${n}%`,
+    resultText: 'Результатом оказанных услуг являются Протоколы лабораторных исследований и измерений.',
+    specTotalNote: (t, n, noVat) => noVat
+      ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ (УСН)'
+      : `, в т.ч. НДС ${n}%`,
     lawRefs: [],
     appendixTitle: 'СПЕЦИФИКАЦИЯ:'
   }
 };
 
-// Лабораторный контроль доступен обоим исполнителям.
-// Для Труд Партнёр — жёстко "без НДС"
 const templatesByExecutor = {
   ecolab: ['sout', 'risks', 'pk', 'lab'],
   trudpartner: ['pk_trud', 'lab']
 };
 
-// Для каких шаблонов какой исполнитель работает без НДС
 function isNoVatForTemplate(tplKey) {
   const exec = currentExecutor();
-  if (exec.noVat) return true;                       // Труд Партнёр — всегда без НДС
-  if (tplKey === 'lab' && exec.id === 'ecolab') return false; // ЭкоЛаб+лаб — с НДС
+  if (exec.noVat) return true;
   return false;
 }
 
@@ -846,7 +889,6 @@ function generateSection2(totalWithKop, ndsRate, paymentMethod, noVat) {
   return vatClause + clause22 + clause23;
 }
 
-// Универсальная формулировка оплаты для лабораторного и ППК+ПК
 function paymentClauseText(paymentMethod) {
   if (paymentMethod === '100') {
     return 'Заказчик в течение 5 (Пяти) рабочих дней с даты подписания Договора и получения счета перечисляет Исполнителю 100 % предоплату стоимости услуг.';
@@ -926,7 +968,7 @@ function updatePkTotals() {
 }
 
 // =============================================
-// 9. УПРАВЛЕНИЕ ЛАБОРАТОРНЫМ КОНТРОЛЕМ
+// 9. УПРАВЛЕНИЕ ПРОИЗВОДСТВЕННЫМ КОНТРОЛЕМ
 // =============================================
 let labItems = [
   { name: 'Микроклимат', unit: 'Замер', qty: 4, price: 700 },
@@ -1324,10 +1366,7 @@ function generateContractHTML() {
   let mainPart = '';
 
   if (tpl.isLab) {
-    // ===== ЛАБОРАТОРНЫЙ КОНТРОЛЬ =====
-    const labAddress = document.getElementById('labAddress').value || clientAddress;
-    const totalQty = labItems.reduce((s, it) => s + (parseFloat(it.qty) || 0), 0);
-    const totalQtyWords = numToWordsGenitive(totalQty);
+    // ===== ПРОИЗВОДСТВЕННЫЙ КОНТРОЛЬ =====
     const totalStr = noVat
       ? `<b>${totalWithKop}</b>, НДС не облагается в соответствии с положениями главы 26.2 Налогового кодекса Российской Федерации (УСН).`
       : `<b>${totalWithKop}</b>, в том числе НДС ${ndsRate}% – ${totalNds.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} руб.`;
@@ -1347,9 +1386,9 @@ function generateContractHTML() {
     ${preamble}
 
     <div class="section-title">1. ПРЕДМЕТ ДОГОВОРА</div>
-    <p><b>1.1.</b> Исполнитель обязуется по заданию Заказчика оказать услуги по лабораторному контролю вредных и опасных производственных факторов на рабочих местах ${clientShortWithOpf}, предоставить Заказчику Протоколы измерений опасных и вредных производственных факторов, а Заказчик обязуется принять и оплатить оказанные услуги.</p>
+    <p><b>1.1.</b> Исполнитель обязуется по заданию Заказчика оказать услуги по производственному контролю на рабочих местах ${clientShortWithOpf}, предоставить Заказчику Протоколы лабораторных исследований и измерений, а Заказчик обязуется принять и оплатить оказанные услуги.</p>
     <p><b>1.2.</b> Услуги оказываются согласно Спецификации (Приложение №1 к настоящему Договору), которая является неотъемлемой частью настоящего Договора.</p>
-    <p><b>1.3.</b> Результатом оказанных услуг являются Протоколы измерений опасных и вредных производственных факторов.</p>
+    <p><b>1.3.</b> Результатом оказанных услуг являются Протоколы лабораторных исследований и измерений.</p>
 
     <div class="section-title">2. ОТВЕТСТВЕННОСТЬ И ОБЯЗАННОСТИ СТОРОН</div>
     <p><b>2.1. Исполнитель обязуется:</b></p>
@@ -1364,7 +1403,7 @@ function generateContractHTML() {
     <div class="section-title">3. ПОРЯДОК ОКАЗАНИЯ УСЛУГ</div>
     <p><b>3.1.</b> Настоящий Договор вступает в силу с даты его подписания Сторонами и действует по 31 декабря текущего года. В случае, если ни одна из Сторон не заявит о своем намерении прекратить отношения по Договору за 15 календарных дней до истечения срока его действия, Договор считается пролонгированным на тех же условиях на каждый следующий календарный год.</p>
     <p><b>3.2.</b> Услуги, являющиеся предметом настоящего Договора, оказываются единовременно в течение 30 календарных дней с даты подписания Договора.</p>
-    <p><b>3.3.</b> Исполнитель обязан в сроки, указанные в настоящем Договоре, предоставить отчетные документы по выполненным услугам: протоколы испытаний и измерений, проведенные в ходе лабораторных исследований.</p>
+    <p><b>3.3.</b> Исполнитель обязан в сроки, указанные в настоящем Договоре, предоставить отчетные документы по выполненным услугам: протоколы испытаний и измерений, проведенные в ходе производственного контроля.</p>
     <p><b>3.4.</b> Заказчик обязан в течение пяти рабочих дней после представления Исполнителем Акта приема-сдачи фактически оказанных услуг подписать вышеуказанный Акт или предоставить мотивированный отказ с указанием необходимых доработок.</p>
 
     <div class="section-title">4. СТОИМОСТЬ УСЛУГ И ПОРЯДОК РАСЧЕТОВ</div>
@@ -1409,7 +1448,7 @@ function generateContractHTML() {
     ${signaturesHTML}
   </div>`;
   } else if (tpl.isPk && !tpl.isTrudPk) {
-    // ===== ПК ЭКОЛАБ =====
+    // ===== ПК ЭКОЛАБ (замеры) =====
     const pkAddress = document.getElementById('pkAddress').value || clientAddress;
     const totalQty = pkItems.reduce((s, it) => s + (parseFloat(it.qty) || 0), 0);
     const totalQtyWordsGen = numToWordsGenitive(totalQty);
@@ -1476,10 +1515,8 @@ function generateContractHTML() {
   </div>`;
   } else if (tpl.isTrudPk) {
     // ===== ПК + ППК ТРУД ПАРТНЁР =====
-    const pkAddress = document.getElementById('pkAddress').value || clientAddress;
     const includeProgram = document.getElementById('pkIncludeProgram')?.checked;
     const includeMeasure = document.getElementById('pkIncludeMeasure')?.checked;
-    const programPrice = parseFloat(document.getElementById('pkProgramPrice')?.value) || 0;
 
     const servicesList = [];
     if (includeProgram) servicesList.push('разработке Программы Производственного контроля на рабочих местах');
@@ -1495,7 +1532,6 @@ function generateContractHTML() {
       ? `<b>${totalWithKop}</b>, НДС не облагается в соответствии с гл. 26.2 НК РФ.`
       : `<b>${totalWithKop}</b>, в том числе НДС ${ndsRate}% – ${totalNds.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} руб.`;
 
-    // Расчёт этапов оплаты для 3.3
     let paymentStagesHTML = '';
     if (paymentMethod === '100') {
       paymentStagesHTML = `<p><b>3.3.</b> ${paymentClauseText(paymentMethod)}</p>`;
@@ -1717,7 +1753,6 @@ function updatePreview() {
   if (ndsLine) ndsLine.style.display = noVat ? 'none' : 'flex';
   if (totalWithoutNdsLabel) totalWithoutNdsLabel.textContent = noVat ? 'Итого:' : 'Без НДС:';
 
-  // Показ кастомных полей оплаты
   const customPaymentFields = document.getElementById('customPaymentFields');
   if (customPaymentFields) {
     customPaymentFields.style.display = document.getElementById('paymentMethod').value === 'custom' ? 'grid' : 'none';
@@ -1732,7 +1767,6 @@ function updatePreview() {
   const blockLab = document.getElementById('blockLab');
   const blockPkTrudOptions = document.getElementById('blockPkTrudOptions');
 
-  // Сброс
   blockSimple.style.display = 'none';
   blockPk.style.display = 'none';
   blockLab.style.display = 'none';
@@ -1792,13 +1826,13 @@ function rebuildTemplateOptions() {
     return `<option value="${key}">${t.label}</option>`;
   }).join('');
   if (allowed.includes(prev)) tplSel.value = prev;
-  updatePreview();
+  refreshContractNumber();
 }
 
 // =============================================
 // 15. КОПИРОВАНИЕ ДЛЯ РЕЕСТРА
 // =============================================
-function copyForRegistry() {
+function copyRegistry() {
   const { qty, tpl, exec } = getTotals();
   const isIP = detectIP();
 
@@ -2002,19 +2036,44 @@ document.addEventListener('DOMContentLoaded', function() {
     { name: 'Химические вещества в воздухе рабочей зоны (АПФД)', qty: 11, price: 280 }
   ];
   renderPkRows();
-
   renderLabRows();
   renderLabExtras();
 
-  // Автогенерация номера договора
-  document.getElementById('contractNumber').value = generateContractNumber();
+  // Кнопка генерации номера
   document.getElementById('genNumberBtn').addEventListener('click', function() {
-    document.getElementById('contractNumber').value = generateContractNumber();
+    const exec = currentExecutor();
+    if (exec.id === 'trudpartner') {
+      document.getElementById('contractNumber').value = generateTrudNumber();
+    } else {
+      ekolabSeq += 1;
+      document.getElementById('contractNumber').value = generateEkolabNumber(
+        document.getElementById('templateType').value, ekolabSeq
+      );
+    }
+    updatePreview();
+  });
+
+  // Смена даты — пересчёт номера Труд Партнёр
+  document.getElementById('contractDate').addEventListener('change', function() {
+    const exec = currentExecutor();
+    if (exec.id === 'trudpartner') {
+      document.getElementById('contractNumber').value = generateTrudNumber();
+    }
     updatePreview();
   });
 
   document.getElementById('executorType').addEventListener('change', rebuildTemplateOptions);
-  document.getElementById('templateType').addEventListener('change', updatePreview);
+
+  document.getElementById('templateType').addEventListener('change', function() {
+    const exec = currentExecutor();
+    if (exec.id === 'ecolab') {
+      document.getElementById('contractNumber').value = generateEkolabNumber(
+        document.getElementById('templateType').value, ekolabSeq
+      );
+    }
+    updatePreview();
+  });
+
   document.getElementById('paymentMethod').addEventListener('change', updatePreview);
 
   document.querySelectorAll('input, select').forEach(inp => {
