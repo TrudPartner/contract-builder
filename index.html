@@ -54,7 +54,7 @@
   .sum-block .line.total { font-size: 18px; font-weight: 700; color: #003366; border-top: 2px solid #e6f0fa; padding-top: 8px; margin-top: 4px; }
   .sum-block .num2text { text-align: right; font-size: 13px; color: #1a3a5f; font-style: italic; margin-top: 4px; }
   .btn-group { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
-  .preview-panel { background: #fff; border-radius: 24px; padding: 24px 28px; box-shadow: 0 8px 30px rgba(0, 30, 60, 0.08); max-height: calc(100vh - 150px); overflow-y: auto; position: relative; }
+  .preview-panel { background: #fff; border-radius: 24px; padding: 24px 22px; box-shadow: 0 8px 30px rgba(0, 30, 60, 0.08); max-height: calc(100vh - 150px); overflow-y: auto; position: relative; }
   .preview-panel::-webkit-scrollbar { width: 4px; }
   .preview-panel::-webkit-scrollbar-thumb { background: #b6ccdd; border-radius: 10px; }
   .preview-panel .preview-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e6f0fa; padding-bottom: 12px; margin-bottom: 16px; font-size: 17px; font-weight: 700; color: #003366; }
@@ -66,14 +66,33 @@
   .contract-preview table.data td:first-child, .contract-preview table.data th:first-child { width: 40px; }
   .contract-preview table.data td:nth-child(2) { text-align: left; }
   .contract-preview table.data td:last-child, .contract-preview table.data th:last-child { text-align: right; }
-  .contract-preview ul { padding-left: 25px; margin: 4px 0; }
+
+  /* ==== ИСПРАВЛЕНИЕ: списки не вылезают за ширину ==== */
+  .contract-preview ul {
+    padding-left: 20px;
+    margin: 4px 0;
+    list-style-position: outside;
+  }
+  .contract-preview ul li {
+    padding-left: 2px;
+    margin: 2px 0;
+    text-align: justify;
+  }
+
   .contract-preview .signatures { margin-top: 24px; page-break-inside: avoid; break-inside: avoid; }
   .contract-preview .signatures td { text-align: left; vertical-align: top; }
   .contract-preview .center { text-align: center; }
   .contract-preview .bold { font-weight: bold; }
   .contract-preview .right { text-align: right; }
   .contract-preview .left { text-align: left; }
-  .contract-preview p { margin: 6px 0; text-align: justify; text-indent: 1.25cm; }
+
+  /* ==== ИСПРАВЛЕНИЕ: текст абзацев шире ==== */
+  .contract-preview p {
+    margin: 6px 0;
+    text-align: justify;
+    text-indent: 1.0cm;
+    padding-right: 0;
+  }
   .contract-preview p.no-indent { text-indent: 0; }
   .contract-preview .section-title { font-weight: bold; text-align: center; margin-top: 16px; margin-bottom: 8px; font-size: 12pt; page-break-after: avoid; break-after: avoid; }
   .contract-preview .sig-table { width: 100%; border: none; margin-top: 24px; border-collapse: collapse; page-break-inside: avoid; break-inside: avoid; }
@@ -239,7 +258,7 @@
         </div>
       </div>
 
-      <div class="field"><label>Банк и номер счёта</label><input type="text" id="clientBank" /></div>
+      <div class="field"><label>Банк</label><input type="text" id="clientBank" /></div>
       <div class="field-row">
         <div class="field"><label>р/с</label><input type="text" id="clientRs" /></div>
         <div class="field"><label>к/с</label><input type="text" id="clientKs" /></div>
@@ -453,7 +472,6 @@ const PK_PARAMS = [
 // =============================================
 // 3. ГЕНЕРАЦИЯ НОМЕРА
 // =============================================
-// Труд Партнёр: XXXX-ДДММГГ
 function generateTrudNumber() {
   const num = Math.floor(1000 + Math.random() * 9000);
   const dateVal = document.getElementById('contractDate').value;
@@ -470,7 +488,6 @@ function generateTrudNumber() {
   return `${num}-${dd}${mm}${yy}`;
 }
 
-// ЭкоЛаб: П-XXXX/<суффикс>
 const EKOLAB_NUMBER_PREFIXES = {
   sout: 'СОУТ',
   risks: 'Риски',
@@ -604,19 +621,21 @@ function amountInWords(amount) {
   return `${rub.toLocaleString('ru-RU')} (${rubWords}) руб. ${kopStr} коп.`;
 }
 
+// ===== ИСПРАВЛЕНИЕ №1: корректное склонение «рабочих мест» =====
 function workplacesDeclension(num) {
-  const last = num % 10, preLast = Math.floor((num % 100) / 10);
-  if (preLast === 1) return 'рабочих мест';
+  const n = Math.abs(Math.round(num)) % 100;
+  const last = n % 10;
+  if (n > 10 && n < 20) return 'рабочих мест';
   if (last === 1) return 'рабочее место';
   if (last >= 2 && last <= 4) return 'рабочих места';
   return 'рабочих мест';
 }
 
 function pointsDeclension(num) {
-  const last = num % 10, preLast = Math.floor((num % 100) / 10);
-  if (preLast === 1) return 'точках';
+  const n = Math.abs(Math.round(num)) % 100;
+  const last = n % 10;
+  if (n > 10 && n < 20) return 'точках';
   if (last === 1) return 'точке';
-  if (last >= 2 && last <= 4) return 'точках';
   return 'точках';
 }
 
@@ -1202,6 +1221,7 @@ function generateContractHTML() {
   const executorActing = getGender(exec.director) === 'female' ? 'действующей' : 'действующего';
 
   const clientBank = document.getElementById('clientBank').value || '';
+  const clientRs = document.getElementById('clientRs').value || '';
   const clientKs = document.getElementById('clientKs').value || '';
   const clientBik = document.getElementById('clientBik').value || '';
 
@@ -1311,6 +1331,7 @@ function generateContractHTML() {
       <p class="no-indent">Адрес: ${clientAddress}</p>
       ${clientFactAddress ? `<p class="no-indent">Фактический адрес: ${clientFactAddress}</p>` : ''}
       <p class="no-indent">${clientBank}</p>
+      ${clientRs ? `<p class="no-indent">р/с ${clientRs}</p>` : ''}
       <p class="no-indent">к/с ${clientKs}</p>
       <p class="no-indent">БИК ${clientBik}</p>
       <p class="no-indent">ОГРНИП ${clientOgrn}</p>
@@ -1322,6 +1343,7 @@ function generateContractHTML() {
       <p class="no-indent">ИНН/КПП ${clientInn}/${clientKpp}</p>
       <p class="no-indent">Юридический/почтовый адрес: ${clientAddress}</p>
       <p class="no-indent">${clientBank}</p>
+      ${clientRs ? `<p class="no-indent">р/с ${clientRs}</p>` : ''}
       <p class="no-indent">к/с ${clientKs}</p>
       <p class="no-indent">БИК ${clientBik}</p>
       <p class="no-indent">ОГРН ${clientOgrn}</p>
@@ -1361,7 +1383,6 @@ function generateContractHTML() {
   let mainPart = '';
 
   if (tpl.isLab && exec.id === 'trudpartner') {
-    // ===== ПК-ЗАМЕРЫ ОТ ТРУД ПАРТНЁР (БТК-структура) =====
     const totalStr = `<b>${totalWithKop}</b>, НДС не облагается в соответствии с гл. 26.2 НК РФ с 01.01.2021 г.`;
 
     mainPart = `
@@ -1440,7 +1461,6 @@ function generateContractHTML() {
     ${signaturesHTML}
   </div>`;
   } else if (tpl.isLab && exec.id === 'ecolab') {
-    // ===== ПРОИЗВОДСТВЕННЫЙ КОНТРОЛЬ (ЭКОЛАБ, старая структура) =====
     const totalStr = noVat
       ? `<b>${totalWithKop}</b>, НДС не облагается в соответствии с положениями главы 26.2 Налогового кодекса Российской Федерации (УСН).`
       : `<b>${totalWithKop}</b>, в том числе НДС ${ndsRate}% – ${totalNds.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 2})} руб.`;
@@ -1522,7 +1542,6 @@ function generateContractHTML() {
     ${signaturesHTML}
   </div>`;
   } else if (tpl.isPk && !tpl.isTrudPk) {
-    // ===== ПК ЭКОЛАБ (замеры) =====
     const pkAddress = document.getElementById('pkAddress').value || clientAddress;
     const totalQty = pkItems.reduce((s, it) => s + (parseFloat(it.qty) || 0), 0);
     const totalQtyWordsGen = numToWordsGenitive(totalQty);
@@ -1588,7 +1607,6 @@ function generateContractHTML() {
     ${signaturesHTML}
   </div>`;
   } else if (tpl.isTrudPk) {
-    // ===== ПК + ППК ТРУД ПАРТНЁР =====
     const includeProgram = document.getElementById('pkIncludeProgram')?.checked;
     const includeMeasure = document.getElementById('pkIncludeMeasure')?.checked;
 
@@ -1686,7 +1704,6 @@ function generateContractHTML() {
     ${signaturesHTML}
   </div>`;
   } else {
-    // ===== СОУТ / РИСКИ =====
     const workplaces = qty;
     const workplacesWordsGenitive = numToWordsGenitive(workplaces);
     const workplacesDecl = workplacesDeclension(workplaces);
@@ -1769,7 +1786,6 @@ function generateContractHTML() {
   </div>`;
   }
 
-  // Приложение
   const factAddressForAppendix = clientFactAddress || clientAddress;
   let appendixAddressLine;
   if (isIP) {
@@ -1903,9 +1919,7 @@ function rebuildTemplateOptions() {
   refreshContractNumber();
 }
 
-// =============================================
-// 15. КОПИРОВАНИЕ ДЛЯ РЕЕСТРА
-// =============================================
+// ===== ИСПРАВЛЕНИЕ №2: для Труд Партнёр в строке реестра нет исполнителя =====
 function copyRegistry() {
   const { qty, tpl, exec } = getTotals();
   const isIP = detectIP();
@@ -1934,7 +1948,13 @@ function copyRegistry() {
     dateStr = `${d}.${m}.${y}`;
   }
 
-  const row = [exec.shortName, nameFull, workType, inn, kpp, number, dateStr, qty].join('\t');
+  // Для Труд Партнёр — без исполнителя в первой колонке
+  let row;
+  if (exec.id === 'trudpartner') {
+    row = [nameFull, workType, inn, kpp, number, dateStr, qty].join('\t');
+  } else {
+    row = [exec.shortName, nameFull, workType, inn, kpp, number, dateStr, qty].join('\t');
+  }
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(row).then(() => {
@@ -2002,9 +2022,7 @@ document.getElementById('loadInnBtn').addEventListener('click', function() {
   .finally(() => { this.disabled = false; this.textContent = 'Загрузить'; });
 });
 
-// =============================================
-// 17. ПОИСК БАНКА
-// =============================================
+// ===== ИСПРАВЛЕНИЕ №5: корректный поиск банка без выдуманного р/с =====
 document.getElementById('loadBankBtn').addEventListener('click', function() {
   const query = document.getElementById('bankSearch').value.trim();
   if (query.length < 3) { alert('Введите БИК или название'); return; }
@@ -2017,13 +2035,28 @@ document.getElementById('loadBankBtn').addEventListener('click', function() {
   .then(r => r.json())
   .then(data => {
     if (data.suggestions && data.suggestions.length > 0) {
-      const bank = data.suggestions[0].data;
-      const bankName = (bank.name && (bank.name.p || bank.name.c || bank.name.s || bank.name.full)) || 'Неизвестный банк';
-      document.getElementById('clientBank').value = 'р/с 407028' + (bank.bic || '') + ' в ' + bankName;
+      const s = data.suggestions[0];
+      const bank = s.data || {};
+
+      // Имя банка: name может быть строкой ИЛИ объектом
+      let bankName = '';
+      if (typeof bank.name === 'string') {
+        bankName = bank.name;
+      } else if (bank.name && typeof bank.name === 'object') {
+        bankName = bank.name.p || bank.name.c || bank.name.s || bank.name.full || '';
+      }
+      if (!bankName) bankName = s.value || '';
+
+      // Только название банка — без выдуманного р/с
+      document.getElementById('clientBank').value = bankName;
       document.getElementById('clientBik').value = bank.bic || '';
-      document.getElementById('clientKs').value = '301018' + (bank.bic ? bank.bic.slice(0, 5) : '') + '0000000';
+      if (bank.correspondent_account) {
+        document.getElementById('clientKs').value = bank.correspondent_account;
+      } else {
+        document.getElementById('clientKs').value = '';
+      }
       updatePreview();
-      alert('✅ Банк найден!');
+      alert('✅ Банк найден: ' + bankName);
     } else alert('❌ Банк не найден');
   })
   .catch(e => alert(e.message))
@@ -2072,8 +2105,9 @@ function exportToWord() {
     table.sig-table td { border: none; padding: 0 12px 0 0; vertical-align: top; text-align: left; }
     table.requisites-table { border: none; border-collapse: collapse; width: 100%; page-break-inside: avoid; }
     table.requisites-table td { border: none; padding: 1px 6px 1px 0; vertical-align: top; text-align: left; font-size: 11pt; }
-    ul { padding-left: 25px; margin: 4px 0; }
-    p { margin: 6px 0; text-align: justify; text-indent: 1.25cm; }
+    ul { padding-left: 20px; margin: 4px 0; list-style-position: outside; }
+    ul li { padding-left: 2px; margin: 2px 0; }
+    p { margin: 6px 0; text-align: justify; text-indent: 1.0cm; }
     p.no-indent { text-indent: 0; }
     .section-title { text-align: center; font-weight: bold; margin-top: 16px; margin-bottom: 8px; font-size: 12pt; page-break-after: avoid; }
     .appendix-block { margin-top: 30px; page-break-inside: avoid; }
