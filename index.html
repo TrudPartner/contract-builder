@@ -975,6 +975,173 @@ function isNoVatForTemplate(tplKey) {
   return false;
 }
 
+  /* ============================================================
+   ГЕНЕРАЦИЯ ДОГОВОРА ОЦЕНКИ РИСКОВ (Труд Партнёр)
+   ============================================================ */
+
+function buildRisksTrudShared() {
+  const exec = currentExecutor();
+  const isIP = detectIP();
+
+  const number = document.getElementById('contractNumber').value || '';
+  const dateRaw = document.getElementById('contractDate').value;
+  const city = document.getElementById('contractCity').value || 'г. Санкт-Петербург';
+
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  let dateFull = '', dateQuoted = '';
+  if (dateRaw) {
+    const [y, m, d] = dateRaw.split('-').map(Number);
+    dateFull = `${d} ${months[m - 1]} ${y} г.`;
+    dateQuoted = `«${String(d).padStart(2, '0')}» ${months[m - 1]} ${y} г.`;
+  } else {
+    const now = new Date();
+    dateFull = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} г.`;
+    dateQuoted = `«${String(now.getDate()).padStart(2, '0')}» ${months[now.getMonth()]} ${now.getFullYear()} г.`;
+  }
+
+  const clientOpf = document.getElementById('clientOpf').value || '';
+  const clientOpfShort = document.getElementById('clientOpfShort').value || '';
+  const clientName = document.getElementById('clientName').value || '';
+  const cleanName = clientName.replace(/^[«"]|[»"]$/g, '').trim();
+  const ipFio = cleanName.replace(/^(ИП|Индивидуальный\s+предприниматель)\s+/i, '').trim();
+
+  let clientFullName, clientShortWithOpf;
+  if (isIP) {
+    clientFullName = `Индивидуальный предприниматель ${ipFio}`.trim();
+    clientShortWithOpf = clientFullName;
+  } else {
+    clientFullName = clientOpf ? `${clientOpf} «${cleanName}»` : `«${cleanName}»`;
+    clientShortWithOpf = clientOpfShort ? `${clientOpfShort} «${cleanName}»` : `«${cleanName}»`;
+  }
+
+  const clientAddress = document.getElementById('clientAddress').value || '';
+  const clientFactAddress = document.getElementById('clientFactAddress').value || '';
+  const clientInn = document.getElementById('clientInn').value || '';
+  const clientKpp = document.getElementById('clientKpp').value || '';
+  const clientOgrn = document.getElementById('clientOgrn').value || '';
+  const clientOkpo = document.getElementById('clientOkpo').value || '';
+  const clientBank = document.getElementById('clientBank').value || '';
+  const clientRs = document.getElementById('clientRs').value || '';
+  const clientKs = document.getElementById('clientKs').value || '';
+  const clientBik = document.getElementById('clientBik').value || '';
+
+  const clientDirectorRaw = isIP ? '' : (document.getElementById('clientDirector').value || '');
+  const clientDirectorGenitive = isIP ? '' : declineFIO(clientDirectorRaw);
+  const clientActing = isIP ? '' : (getGender(clientDirectorRaw) === 'female' ? 'действующей' : 'действующего');
+
+  let clientInitials;
+  if (isIP) {
+    const parts = ipFio.split(/\s+/);
+    if (parts.length >= 2) {
+      const surname = parts[0];
+      const initials = parts.slice(1).map(p => (p.charAt(0) || '').toUpperCase() + '.').join('');
+      clientInitials = `${surname} ${initials}`;
+    } else clientInitials = ipFio;
+  } else clientInitials = getInitials(clientDirectorRaw);
+
+  const executorDirectorGenitive = declineFIO(exec.director);
+  const executorInitials = getInitials(exec.director);
+  const executorActing = getGender(exec.director) === 'female' ? 'действующей' : 'действующего';
+
+  return {
+    number, dateFull, dateQuoted, city,
+    isIP, clientFullName, clientShortWithOpf, clientAddress, clientFactAddress,
+    clientInn, clientKpp, clientOgrn, clientOkpo, clientBank, clientRs, clientKs, clientBik,
+    clientDirectorRaw, clientDirectorGenitive, clientActing, clientInitials,
+    exec, executorDirectorGenitive, executorInitials, executorActing
+  };
+}
+
+function buildRisksTrudCommonBlocks(s) {
+  const { isIP, clientFullName, clientShortWithOpf, clientAddress, clientFactAddress,
+    clientInn, clientKpp, clientOgrn, clientOkpo, clientBank, clientRs, clientKs, clientBik,
+    clientDirectorGenitive, clientActing, clientInitials, clientDirectorRaw,
+    exec, executorDirectorGenitive, executorInitials, executorActing } = s;
+
+  let preamble;
+  if (isIP) {
+    const ogrnip = clientOgrn || '__________';
+    preamble = `
+      <p class="no-indent">${clientFullName}, действующий на основании ОГРНИП ${ogrnip}, именуемый в дальнейшем «Заказчик», с одной стороны, и</p>
+      <p class="no-indent">${exec.fullName} (далее по тексту ${exec.shortName}), в лице ${executorDirectorGenitive}, ${executorActing} на основании ${exec.basis}, именуемое в дальнейшем «ИСПОЛНИТЕЛЬ», с другой стороны, совместно именуемые Стороны, заключили настоящий Договор о нижеследующем:</p>`;
+  } else {
+    preamble = `
+      <p class="no-indent">${clientFullName} (далее по тексту ${clientShortWithOpf}), в лице ${clientDirectorGenitive}, ${clientActing} на основании ${exec.basis}, именуемое в дальнейшем «Заказчик», с одной стороны, и</p>
+      <p class="no-indent">${exec.fullName} (далее по тексту ${exec.shortName}), в лице ${executorDirectorGenitive}, ${executorActing} на основании ${exec.basis}, именуемое в дальнейшем «ИСПОЛНИТЕЛЬ», с другой стороны, совместно именуемые Стороны, заключили настоящий Договор о нижеследующем:</p>`;
+  }
+
+  const clientSigBlock = isIP
+    ? `Индивидуальный предприниматель<br><br><br>________________________ / ${clientInitials} /`
+    : `${getPositionOnly(clientDirectorRaw)}<br>${clientShortWithOpf}<br><br>________________________ / ${clientInitials} /`;
+
+  const signaturesHTML = `
+  <div class="signatures">
+    <table class="sig-table" style="width:100%;border:none;border-collapse:collapse;margin-top:24px;">
+      <tr>
+        <td style="width:50%;vertical-align:top;border:none;padding:0 12px 0 0;text-align:left;">
+          <b>ЗАКАЗЧИК:</b><br>${clientSigBlock}
+        </td>
+        <td style="width:50%;vertical-align:top;border:none;padding:0 0 0 12px;text-align:left;">
+          <b>ИСПОЛНИТЕЛЬ:</b><br>${getPositionOnly(exec.director)}<br>${exec.shortName}<br><br>________________________ / ${executorInitials} /
+        </td>
+      </tr>
+    </table>
+  </div>`;
+
+  let clientRequisites;
+  if (isIP) {
+    clientRequisites = `
+      <p class="no-indent"><b>ЗАКАЗЧИК:</b></p>
+      <p class="no-indent">${clientShortWithOpf}</p>
+      <p class="no-indent">ИНН ${clientInn}</p>
+      <p class="no-indent">Адрес: ${clientAddress}</p>
+      ${clientFactAddress ? `<p class="no-indent">Фактический адрес: ${clientFactAddress}</p>` : ''}
+      ${clientBank ? `<p class="no-indent">${clientBank}</p>` : ''}
+      ${clientRs ? `<p class="no-indent">р/с ${clientRs}</p>` : ''}
+      ${clientKs ? `<p class="no-indent">к/с ${clientKs}</p>` : ''}
+      ${clientBik ? `<p class="no-indent">БИК ${clientBik}</p>` : ''}
+      ${clientOgrn ? `<p class="no-indent">ОГРНИП ${clientOgrn}</p>` : ''}
+      ${clientOkpo ? `<p class="no-indent">ОКПО ${clientOkpo}</p>` : ''}`;
+  } else {
+    clientRequisites = `
+      <p class="no-indent"><b>ЗАКАЗЧИК:</b></p>
+      <p class="no-indent">${clientShortWithOpf}</p>
+      <p class="no-indent">ИНН/КПП ${clientInn}/${clientKpp}</p>
+      <p class="no-indent">Юридический/почтовый адрес: ${clientAddress}</p>
+      ${clientBank ? `<p class="no-indent">${clientBank}</p>` : ''}
+      ${clientRs ? `<p class="no-indent">р/с ${clientRs}</p>` : ''}
+      ${clientKs ? `<p class="no-indent">к/с ${clientKs}</p>` : ''}
+      ${clientBik ? `<p class="no-indent">БИК ${clientBik}</p>` : ''}
+      ${clientOgrn ? `<p class="no-indent">ОГРН ${clientOgrn}</p>` : ''}
+      ${clientOkpo ? `<p class="no-indent">ОКПО ${clientOkpo}</p>` : ''}`;
+  }
+
+  const requisitesHTML = `
+    <table class="requisites-table">
+      <tr>
+        <td>${clientRequisites}</td>
+        <td style="padding-left:20px;">
+          <p class="no-indent"><b>ИСПОЛНИТЕЛЬ:</b></p>
+          <p class="no-indent">${exec.fullName}</p>
+          <p class="no-indent">ИНН/КПП ${exec.inn}/${exec.kpp}</p>
+          <p class="no-indent">Юридический и почтовый адрес: ${exec.address}</p>
+          <p class="no-indent">${exec.bank}</p>
+          <p class="no-indent">к/с ${exec.ks}</p>
+          <p class="no-indent">БИК ${exec.bik}</p>
+          <p class="no-indent">ОГРН ${exec.ogrn}</p>
+          ${exec.okpo ? `<p class="no-indent">ОКПО ${exec.okpo}</p>` : ''}
+          ${exec.phone ? `<p class="no-indent">Тел.: ${exec.phone}</p>` : ''}
+          ${exec.email ? `<p class="no-indent">E-mail: ${exec.email}</p>` : ''}
+        </td>
+      </tr>
+    </table>`;
+
+  return { preamble, signaturesHTML, requisitesHTML };
+}
+
+function buildRisksTrudLawsList(tpl) {
+  return tpl.lawRefs.map(r => `<li>${r};</li>`).join('');
+}
 // =============================================
   /* ============================================================
    ГЕНЕРАЦИЯ ДОГОВОРА ОЦЕНКИ РИСКОВ (Труд Партнёр)
