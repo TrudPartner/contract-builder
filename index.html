@@ -273,7 +273,54 @@
           <div class="field"><label>Цена за 1 место</label><input type="number" id="pricePerPlace" value="1200" min="0" step="0.01" /></div>
         </div>
       </div>
+<div id="blockRisksTrud" style="display:none;">
 
+        <div style="background:#fff8e6; border-radius:8px; padding:10px 12px; border:1px solid #ffe0a3; margin-bottom:12px;">
+          <label style="display:block; font-size:13.5px; font-weight:700; color:#8a5a00; cursor:pointer;">
+            <input type="checkbox" id="risksFramework" style="width:auto; margin-right:6px; vertical-align:middle;" />
+            📋 Рамочный договор (Заявки, автопролонгация)
+          </label>
+          <div style="font-size:12px; color:#8a5a00; margin-top:6px; line-height:1.4;" id="risksFrameworkHint">
+            Обычный договор: фиксированный объём и стоимость, срок до 30.12.2026.
+          </div>
+        </div>
+
+        <!-- Поля ОБЫЧНОГО договора -->
+        <div id="risksNormalFields">
+          <div class="field-row">
+            <div class="field">
+              <label>Кол-во рабочих мест</label>
+              <input type="number" id="risksWorkplaces" value="74" min="1" />
+            </div>
+            <div class="field">
+              <label>Цена за 1 раб. место, ₽</label>
+              <input type="number" id="risksPricePerPlace" value="500" min="0" step="0.01" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Срок действия договора до</label>
+            <input type="date" id="risksValidUntil" value="2026-12-30" />
+          </div>
+        </div>
+
+        <!-- Поля РАМОЧНОГО договора -->
+        <div id="risksFrameFields" style="display:none;">
+          <div class="field-row">
+            <div class="field">
+              <label>Ставка за 1 раб. место, ₽</label>
+              <input type="number" id="risksFrameRate" value="1300" readonly style="background:#f5f7fa;" />
+            </div>
+            <div class="field">
+              <label>Срок действия договора до</label>
+              <input type="date" id="risksFrameValidUntil" value="2026-12-31" />
+            </div>
+          </div>
+          <div style="background:#f0f7fe; border-radius:8px; padding:10px 12px; border:1px solid #c8e0f5; font-size:12.5px; color:#1a3a5f; line-height:1.5;">
+            ℹ️ В рамочном договоре объём услуг и стоимость определяются в <b>Заявках</b> (Приложение № 1). В самом договоре ставка фиксирована — <b>1 300 ₽</b> за 1 рабочее место.
+          </div>
+        </div>
+
+      </div>
       <div id="blockPk" style="display:none;">
         <div class="field">
           <label>Адрес объекта проведения работ</label>
@@ -872,12 +919,54 @@ const templates = {
       : `, в т.ч. НДС ${n}%`,
     lawRefs: [],
     appendixTitle: 'СПЕЦИФИКАЦИЯ:'
-  }
+  },
+  risks_trud: {
+    executorId: 'trudpartner',
+    label: 'Оценка рисков (Труд Партнёр)',
+    workType: 'ОЦЕНКА РИСКОВ',
+    isRisksTrud: true,
+    hasFrameworkToggle: true,
+    subjectGenitive: 'оценки профессиональных рисков',
+    subjectHeader: 'на оказание услуг по расчету рисков',
+    specName: 'Оценка профессиональных рисков',
+    specUnit: 'раб. мест',
+    measureLabel: 'Кол-во рабочих мест',
+    resultText: 'Результатом оказания услуги является – Отчет по процедуре «Идентификация опасностей, оценка, контроль и анализ рисков» для Заказчика.',
+    specTotalNote: () => ', НДС не облагается в соответствии с гл. 26.2 НК РФ с 01.01.2021 г.',
+    lawRefs: [
+      'Конституция Российской Федерации',
+      'Трудовой кодекс Российской Федерации',
+      'Федеральный закон от 27.12.2002 №184-ФЗ «О техническом регулировании»',
+      'Федеральный закон от 30.03.1999 №52-ФЗ «О санитарно-эпидемиологическом благополучии населения»',
+      'Федеральный закон от 28.12.2013 №426-ФЗ «О специальной оценке условий труда»',
+      'Федеральный закон от 4 октября 2010 г. N 265-ФЗ «О ратификации Конвенции об основах, содействующих безопасности и гигиене труда (Конвенции N 187)»',
+      'Национальный стандарт РФ ГОСТ Р 12.0.007-2009',
+      'Национальный стандарт РФ ГОСТ Р 12.0.010-2009',
+      'Приказ Минтруда РФ от 29.10.2021 N 771Н',
+      'Приказ Роструда от 21.03.2019 N 77',
+      'ГОСТ Р 22.2.02-2015',
+      'ГОСТ 12.0.003-2015',
+      'ГОСТ Р ИСО 45001-2020',
+      'ГОСТ Р ИСО/МЭК 31010-2019',
+      'ГОСТ Р 51901.1-2002',
+      'ГОСТ Р 12.0.008-2009',
+      'ГОСТ 12.0.230-2007',
+      'ГОСТ Р 51898-2002',
+      'Р 2.2.1766-03',
+      'ГОСТ Р 58771-2019',
+      'Р 2.2.2006-05',
+      'Приказ Минтруда РФ от 29.10.2021 N 776Н',
+      'Приказ Минтруда РФ от 31.01.2022 N 36',
+      'Приказ Минтруда РФ от 28.12.2021 № 926'
+    ],
+    appendixTitle: 'СПЕЦИФИКАЦИЯ:',
+    appendixTitleFrame: 'СПЕЦИФИКАЦИЯ:'
+  },
 };
 
 const templatesByExecutor = {
   ecolab: ['sout', 'risks', 'pk', 'lab'],
-  trudpartner: ['pk_trud', 'lab']
+  trudpartner: ['pk_trud', 'lab', 'risks_trud']
 };
 
 function isNoVatForTemplate(tplKey) {
