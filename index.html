@@ -139,6 +139,7 @@
     .contract-preview table.data { page-break-inside: avoid !important; break-inside: avoid !important; }
     .contract-preview .signatures { page-break-inside: avoid !important; break-inside: avoid !important; }
     .contract-preview .appendix-block { page-break-inside: avoid !important; break-inside: avoid !important; }
+        .contract-preview .appendix-block { break-before: page !important; page-break-before: always !important; }
     .print-footer {
       display: block !important;
       position: fixed;
@@ -868,6 +869,7 @@ const templates = {
     specTotalNote: (t, n, noVat) => noVat ? ', НДС не облагается в соответствии с гл. 26.2 НК РФ' : `, в т.ч. НДС ${n}% в соответствии с п.п.1 п.8 ст 164 НК РФ`,
     lawRefs: [
       'ГОСТ Р 58771-2019 МЕНЕДЖМЕНТ РИСКА',
+      'СП 2.2.4285-26 «Санитарно-эпидемиологические требования к условиям труда»',
       'Р 2.2.2006-05',
       'Приказ Минтруда РФ от 29.10.2021 N 776Н',
       'Приказ Минтруда РФ от 31.01.2022 N 36',
